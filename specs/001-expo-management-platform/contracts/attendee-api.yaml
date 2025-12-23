@@ -1,0 +1,1137 @@
+openapi: 3.0.3
+info:
+  title: EventSphere Attendee Interface API
+  description: |
+    Attendee interface endpoints for browsing expos, registering for events, and managing personal schedules.
+
+    **Role Requirements**: All endpoints require authenticated user with 'attendee' role.
+
+    **Functional Requirements**:
+    - FR-025 to FR-033: Attendee interface capabilities
+    - FR-034: Real-time schedule updates (<5 seconds)
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Local development
+  - url: https://api.eventsphere.com/v1
+    description: Production
+
+tags:
+  - name: Expo Directory
+    description: Browse and view expo events
+  - name: Event Registration
+    description: Register for expos and sessions
+  - name: Exhibitor Discovery
+    description: Search and view exhibitor profiles
+  - name: Personal Schedule
+    description: Manage bookmarks and personal schedule
+  - name: Communication
+    description: Contact exhibitors
+
+paths:
+  /attendee/expos:
+    get:
+      tags:
+        - Expo Directory
+      summary: Browse expo directory
+      description: |
+        Browse all available and upcoming expo events.
+        Implements FR-025 (browse expo events).
+      operationId: browseExpoDirectory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by expo status
+          schema:
+            type: string
+            enum: [upcoming, active]
+        - name: category
+          in: query
+          description: Filter by expo theme/category
+          schema:
+            type: string
+        - name: location
+          in: query
+          description: Filter by city or country
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          description: Filter expos starting from date
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Filter expos ending before date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Expo directory retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      expos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ExpoSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}:
+    get:
+      tags:
+        - Expo Directory
+      summary: Get expo details
+      description: |
+        View detailed information about specific expo including schedule, exhibitors, and floor plan.
+        Implements FR-026 (view event details).
+      operationId: getExpoDetails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expo details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ExpoDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/register:
+    post:
+      tags:
+        - Event Registration
+      summary: Register for expo event
+      description: |
+        Register attendance for expo event.
+        Implements FR-027 (register for expo).
+
+        **Business Rules**:
+        - One registration per user per expo
+        - Can register preferences and interests
+      operationId: registerForExpo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                preferences:
+                  type: object
+                  properties:
+                    interests:
+                      type: array
+                      items:
+                        type: string
+                      example: [AI, Cloud Computing, Cybersecurity]
+                    dietaryRestrictions:
+                      type: array
+                      items:
+                        type: string
+                      example: [Vegetarian]
+      responses:
+        '201':
+          description: Registered for expo successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Successfully registered for expo
+                  data:
+                    $ref: '#/components/schemas/AttendeeRegistration'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Already registered for this expo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: You are already registered for this expo
+                errorCode: ALREADY_REGISTERED
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/sessions:
+    get:
+      tags:
+        - Expo Directory
+      summary: Get expo schedule
+      description: |
+        View complete event schedule with all sessions and workshops.
+        Implements FR-026 (view schedule).
+
+        **Features**:
+        - Real-time updates when schedule changes (FR-034)
+        - Filter by category, topic, time
+      operationId: getExpoSchedule
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Filter by session category
+          schema:
+            type: string
+        - name: topic
+          in: query
+          description: Filter by topic/keyword
+          schema:
+            type: string
+        - name: date
+          in: query
+          description: Filter by specific date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sessions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SessionDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/sessions/{sessionId}/bookmark:
+    post:
+      tags:
+        - Personal Schedule
+      summary: Bookmark session
+      description: |
+        Bookmark/register for session or workshop.
+        Implements FR-031 (bookmark sessions).
+
+        **Business Rules**:
+        - One bookmark per user per session
+        - Increments session attendance count
+        - Cannot exceed session capacity
+      operationId: bookmarkSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reminderPreferences:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    minutesBefore:
+                      type: integer
+                      default: 60
+                      example: 60
+                    channels:
+                      type: array
+                      items:
+                        type: string
+                        enum: [email, in-app]
+                      example: [email, in-app]
+      responses:
+        '201':
+          description: Session bookmarked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Session bookmarked successfully
+                  data:
+                    $ref: '#/components/schemas/SessionBookmark'
+        '400':
+          description: Session at capacity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Session has reached maximum capacity
+                errorCode: SESSION_FULL
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Session already bookmarked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: You have already bookmarked this session
+                errorCode: ALREADY_BOOKMARKED
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Personal Schedule
+      summary: Remove session bookmark
+      description: |
+        Remove bookmark/registration from session.
+        Implements FR-031 (manage bookmarks).
+      operationId: removeBookmark
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bookmark removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Session bookmark removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/schedule:
+    get:
+      tags:
+        - Personal Schedule
+      summary: Get personal schedule
+      description: |
+        Retrieve all bookmarked sessions across all expos.
+        Implements FR-032 (view personal schedule).
+
+        **Features**:
+        - Shows all registered/bookmarked sessions
+        - Sorted chronologically
+        - Highlights scheduling conflicts
+      operationId: getPersonalSchedule
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: query
+          description: Filter by specific expo
+          schema:
+            type: string
+        - name: upcoming
+          in: query
+          description: Show only upcoming sessions
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Personal schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sessions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SessionBookmarkDetail'
+                      conflicts:
+                        type: array
+                        description: Sessions with overlapping times
+                        items:
+                          type: object
+                          properties:
+                            conflictingSessions:
+                              type: array
+                              items:
+                                type: string
+                              description: Session IDs that overlap
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/exhibitors:
+    get:
+      tags:
+        - Exhibitor Discovery
+      summary: Search exhibitors
+      description: |
+        Search and filter exhibitors by category, product, or keyword.
+        Implements FR-028 (search exhibitors).
+      operationId: searchExhibitors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search by keyword in company name or products
+          schema:
+            type: string
+        - name: product
+          in: query
+          description: Filter by specific product/service
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exhibitors retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      exhibitors:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ExhibitorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/exhibitors/{exhibitorId}:
+    get:
+      tags:
+        - Exhibitor Discovery
+      summary: Get exhibitor profile
+      description: |
+        View exhibitor company profile and booth location.
+        Implements FR-029 (view exhibitor profile).
+      operationId: getExhibitorProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+        - name: exhibitorId
+          in: path
+          required: true
+          description: Exhibitor Profile ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exhibitor profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ExhibitorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/expos/{expoId}/floor-plan:
+    get:
+      tags:
+        - Exhibitor Discovery
+      summary: View floor plan
+      description: |
+        View expo floor plan with exhibitor booth locations.
+        Implements FR-026, FR-029 (view floor plan and booth locations).
+      operationId: viewFloorPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expoId
+          in: path
+          required: true
+          description: Expo ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Floor plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FloorPlanView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/messages:
+    get:
+      tags:
+        - Communication
+      summary: Get messages
+      description: |
+        Retrieve all messages for attendee.
+        Implements FR-030 (view messages).
+      operationId: getAttendeeMessages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          description: Show only unread messages
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      messages:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Message'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Communication
+      summary: Contact exhibitor
+      description: |
+        Send message to exhibitor for inquiry or appointment.
+        Implements FR-030 (contact exhibitors).
+      operationId: contactExhibitor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exhibitorId
+                - content
+              properties:
+                exhibitorId:
+                  type: string
+                  example: 507f1f77bcf86cd799439040
+                  description: Exhibitor user ID
+                subject:
+                  type: string
+                  maxLength: 200
+                  example: Product inquiry
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                  example: I'm interested in your AI platform. Can we schedule a demo?
+                relatedExpoId:
+                  type: string
+                  description: Expo context for inquiry
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Message sent to exhibitor
+                  data:
+                    $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Exhibitor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Exhibitor not found
+                errorCode: EXHIBITOR_NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendee/messages/{messageId}/read:
+    put:
+      tags:
+        - Communication
+      summary: Mark message as read
+      description: Mark specific message as read
+      operationId: markMessageRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          description: Message ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Message marked as read
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ExpoSummary:
+      type: object
+      properties:
+        expoId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        theme:
+          type: string
+        dateRange:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date-time
+            endDate:
+              type: string
+              format: date-time
+        location:
+          type: object
+          properties:
+            venueName:
+              type: string
+            city:
+              type: string
+            country:
+              type: string
+        status:
+          type: string
+          enum: [upcoming, active]
+        stats:
+          type: object
+          properties:
+            exhibitorCount:
+              type: integer
+            sessionCount:
+              type: integer
+
+    ExpoDetail:
+      allOf:
+        - $ref: '#/components/schemas/ExpoSummary'
+        - type: object
+          properties:
+            location:
+              type: object
+              properties:
+                venueName:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                country:
+                  type: string
+            organizer:
+              type: object
+              properties:
+                name:
+                  type: string
+            isRegistered:
+              type: boolean
+              description: Whether current attendee is registered
+
+    AttendeeRegistration:
+      type: object
+      properties:
+        registrationId:
+          type: string
+        expo:
+          type: object
+          properties:
+            expoId:
+              type: string
+            title:
+              type: string
+        registrationDate:
+          type: string
+          format: date-time
+        attendanceStatus:
+          type: string
+          enum: [registered, checked-in, no-show]
+        preferences:
+          type: object
+          properties:
+            interests:
+              type: array
+              items:
+                type: string
+            dietaryRestrictions:
+              type: array
+              items:
+                type: string
+
+    SessionDetail:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        speakers:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              title:
+                type: string
+              bio:
+                type: string
+        schedule:
+          type: object
+          properties:
+            startTime:
+              type: string
+              format: date-time
+            endTime:
+              type: string
+              format: date-time
+            duration:
+              type: integer
+        location:
+          type: object
+          properties:
+            room:
+              type: string
+            building:
+              type: string
+        capacity:
+          type: integer
+        currentAttendees:
+          type: integer
+        availableSeats:
+          type: integer
+        topic:
+          type: string
+        category:
+          type: string
+        isBookmarked:
+          type: boolean
+          description: Whether current attendee has bookmarked
+
+    SessionBookmark:
+      type: object
+      properties:
+        bookmarkId:
+          type: string
+        session:
+          type: object
+          properties:
+            sessionId:
+              type: string
+            title:
+              type: string
+        bookmarkDate:
+          type: string
+          format: date-time
+        reminderPreferences:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            minutesBefore:
+              type: integer
+            channels:
+              type: array
+              items:
+                type: string
+
+    SessionBookmarkDetail:
+      allOf:
+        - $ref: '#/components/schemas/SessionBookmark'
+        - type: object
+          properties:
+            session:
+              $ref: '#/components/schemas/SessionDetail'
+            expo:
+              type: object
+              properties:
+                expoId:
+                  type: string
+                title:
+                  type: string
+
+    ExhibitorProfile:
+      type: object
+      properties:
+        exhibitorId:
+          type: string
+        companyName:
+          type: string
+        description:
+          type: string
+        logo:
+          type: string
+        productsServices:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+        contactInfo:
+          type: object
+          properties:
+            email:
+              type: string
+            website:
+              type: string
+        booth:
+          type: object
+          nullable: true
+          properties:
+            boothId:
+              type: string
+            identifier:
+              type: string
+            location:
+              type: object
+              properties:
+                x:
+                  type: number
+                y:
+                  type: number
+
+    FloorPlanView:
+      type: object
+      properties:
+        floorPlanId:
+          type: string
+        name:
+          type: string
+        dimensions:
+          type: object
+          properties:
+            width:
+              type: number
+            height:
+              type: number
+        imageUrl:
+          type: string
+        booths:
+          type: array
+          items:
+            type: object
+            properties:
+              boothId:
+                type: string
+              identifier:
+                type: string
+              location:
+                type: object
+                properties:
+                  x:
+                    type: number
+                  y:
+                    type: number
+              exhibitor:
+                type: object
+                nullable: true
+                properties:
+                  companyName:
+                    type: string
+                  logo:
+                    type: string
+
+    Message:
+      type: object
+      properties:
+        messageId:
+          type: string
+        sender:
+          type: object
+          properties:
+            userId:
+              type: string
+            name:
+              type: string
+            role:
+              type: string
+        recipient:
+          type: object
+          properties:
+            userId:
+              type: string
+            name:
+              type: string
+        subject:
+          type: string
+        content:
+          type: string
+        context:
+          type: string
+        relatedExpo:
+          type: object
+          nullable: true
+          properties:
+            expoId:
+              type: string
+            title:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
+        isRead:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errorCode:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "SlashCommand(/sp.constitution)",
+      "Bash(.specify/scripts/bash/create-phr.sh:*)",
+      "Bash(git fetch:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(bash:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(python -m src:*)",
+      "Bash(test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(pnpm add:*)",
+      "Bash(git config:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(uv run python:*)",
+      "mcp__github__get_me",
+      "Bash(python -m py_compile:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .scriptsdeploy.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"D:\\\\Todo_giaic_five_phases\\\\scripts\\\\deploy_fixed.ps1\")",
+      "Bash(uv lock:*)",
+      "Bash(kubectl get:*)",
+      "Bash(minikube ip:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(git push:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(minikube status:*)",
+      "Bash(docker ai:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "better-auth",
+    "context7",
+    "github",
+    "docker"
+  ]
+}

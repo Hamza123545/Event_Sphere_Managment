@@ -1,6 +1,5 @@
 // Load environment variables FIRST before any other imports
 // Using require to ensure this runs before ES module imports
-require('dotenv').config();
 
 import http from 'http';
 import app from './app';
