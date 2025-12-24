@@ -11,14 +11,19 @@ const router: ExpressRouter = Router();
 // Import route modules
 import authRoutes from './authRoutes';
 import expoRoutes from './expoRoutes';
-// import exhibitorRoutes from './exhibitorRoutes';
-// import attendeeRoutes from './attendeeRoutes';
+import exhibitorRoutes from './exhibitorRoutes';
+import attendeeRoutes from './attendeeRoutes';
+import feedbackRoutes from './feedbackRoutes';
+import messagingRoutes from './messagingRoutes';
+import feedbackRoutes from './feedbackRoutes';
 
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/expos', expoRoutes);
-// router.use('/exhibitor', exhibitorRoutes);
-// router.use('/attendee', attendeeRoutes);
+router.use('/exhibitor', exhibitorRoutes);
+router.use('/attendee', attendeeRoutes);
+router.use('/messages', messagingRoutes);
+router.use('/feedback', feedbackRoutes);
 
 // API info endpoint
 router.get('/', (_req, res) => {

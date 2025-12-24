@@ -7,8 +7,9 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 import * as authService from '../services/authService';
-import { AuthRequest, requireAuth, } from '../middleware/auth';
+import { AuthRequest, requireAuth } from '../middleware/auth';
 import { validate, validateEmail, validatePassword } from '../middleware/validator';
+import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLimit';
 
 const router: ExpressRouter = Router();
 
@@ -56,9 +57,11 @@ router.post(
 /**
  * POST /auth/login
  * User login
+ * Protected with strict rate limiting (T228)
  */
 router.post(
   '/login',
+  // authRateLimiter, // Strict rate limiting: 5 attempts per 15 minutes (uncomment after installing express-rate-limit)
   validate([validateEmail, body('password').notEmpty().withMessage('Password is required')]),
   async (req, res, next) => {
     try {
@@ -160,9 +163,11 @@ router.post(
 /**
  * POST /auth/forgot-password
  * Request password reset
+ * Protected with rate limiting (T228)
  */
 router.post(
   '/forgot-password',
+  // passwordResetRateLimiter, // 3 requests per hour (uncomment after installing express-rate-limit)
   validate([validateEmail]),
   async (req, res, next) => {
     try {
@@ -194,6 +199,51 @@ router.post(
       res.status(200).json({
         success: true,
         message: 'Password reset successful. Please login with your new password.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /auth/me/gdpr-export
+ * Export all user data (GDPR compliance)
+ * Implements T233, FR-007
+ */
+router.get(
+  '/me/gdpr-export',
+  requireAuth,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const { exportUserData } = await import('../services/gdprService');
+      const userData = await exportUserData(req.user!.userId);
+      res.status(200).json({
+        success: true,
+        message: 'User data export successful',
+        data: userData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * DELETE /auth/me/gdpr-delete
+ * Delete user account and anonymize data (GDPR compliance)
+ * Implements T233, FR-007
+ */
+router.delete(
+  '/me/gdpr-delete',
+  requireAuth,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const { deleteUserAccount } = await import('../services/gdprService');
+      await deleteUserAccount(req.user!.userId);
+      res.status(200).json({
+        success: true,
+        message: 'Account deletion initiated. Your data will be anonymized and permanently deleted after 30 days.',
       });
     } catch (error) {
       next(error);

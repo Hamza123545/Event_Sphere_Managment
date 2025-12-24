@@ -2,6 +2,7 @@ import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { verifyToken, TokenPayload } from '../utils/auth';
 import { logger } from '../utils/logger';
+import mongoose from 'mongoose';
 
 /**
  * Socket.io server setup for real-time updates
@@ -10,6 +11,21 @@ import { logger } from '../utils/logger';
  */
 
 let io: SocketIOServer | null = null;
+
+// Connection tracking (T135)
+const activeConnections = new Map<string, Set<string>>(); // room -> Set<socketId>
+const socketToRooms = new Map<string, Set<string>>(); // socketId -> Set<room>
+
+// Broadcast queue for optimization
+interface QueuedBroadcast {
+  expoId: string;
+  event: string;
+  data: unknown;
+  timestamp: number;
+}
+
+let broadcastQueue: QueuedBroadcast[] = [];
+let broadcastTimer: NodeJS.Timeout | null = null;
 
 /**
  * Extract and verify JWT token from socket handshake
@@ -85,32 +101,102 @@ export function setupSocketIO(httpServer: HTTPServer): SocketIOServer {
     socket.on('join-expo', (expoId: string) => {
       const room = `expo-${expoId}`;
       socket.join(room);
-      logger.debug('User joined expo room', {
+      
+      // Track connection
+      if (!activeConnections.has(room)) {
+        activeConnections.set(room, new Set());
+      }
+      activeConnections.get(room)!.add(socket.id);
+      
+      if (!socketToRooms.has(socket.id)) {
+        socketToRooms.set(socket.id, new Set());
+      }
+      socketToRooms.get(socket.id)!.add(room);
+      
+      logger.info('User joined expo room', {
         socketId: socket.id,
         userId: user.userId,
         expoId,
         room,
+        connectionsInRoom: activeConnections.get(room)!.size,
       });
     });
+
+    // Join user-specific room for personal updates (e.g., exhibitor approvals)
+    socket.on('join-user', () => {
+      const userRoom = `user-${user.userId}`;
+      socket.join(userRoom);
+      logger.debug('User joined personal room', {
+        socketId: socket.id,
+        userId: user.userId,
+        room: userRoom,
+      });
+    });
+
+    // Auto-join role-specific rooms
+    if (user.role === 'exhibitor') {
+      const exhibitorRoom = `exhibitor-${user.userId}`;
+      socket.join(exhibitorRoom);
+      logger.debug('Exhibitor joined role-specific room', {
+        socketId: socket.id,
+        userId: user.userId,
+        room: exhibitorRoom,
+      });
+    } else if (user.role === 'organizer') {
+      const organizerRoom = `organizer-${user.userId}`;
+      socket.join(organizerRoom);
+      logger.debug('Organizer joined role-specific room', {
+        socketId: socket.id,
+        userId: user.userId,
+        room: organizerRoom,
+      });
+    }
 
     // Leave expo room
     socket.on('leave-expo', (expoId: string) => {
       const room = `expo-${expoId}`;
       socket.leave(room);
-      logger.debug('User left expo room', {
+      
+      // Update connection tracking
+      activeConnections.get(room)?.delete(socket.id);
+      socketToRooms.get(socket.id)?.delete(room);
+      
+      // Clean up empty rooms
+      if (activeConnections.get(room)?.size === 0) {
+        activeConnections.delete(room);
+      }
+      if (socketToRooms.get(socket.id)?.size === 0) {
+        socketToRooms.delete(socket.id);
+      }
+      
+      logger.info('User left expo room', {
         socketId: socket.id,
         userId: user.userId,
         expoId,
         room,
+        connectionsInRoom: activeConnections.get(room)?.size || 0,
       });
     });
 
     // Disconnect handler
     socket.on('disconnect', (reason) => {
+      // Clean up connection tracking
+      const rooms = socketToRooms.get(socket.id);
+      if (rooms) {
+        rooms.forEach((room) => {
+          activeConnections.get(room)?.delete(socket.id);
+          if (activeConnections.get(room)?.size === 0) {
+            activeConnections.delete(room);
+          }
+        });
+        socketToRooms.delete(socket.id);
+      }
+      
       logger.info('Socket disconnected', {
         socketId: socket.id,
         userId: user.userId,
         reason,
+        roomsLeft: rooms ? Array.from(rooms) : [],
       });
     });
 
@@ -125,7 +211,168 @@ export function setupSocketIO(httpServer: HTTPServer): SocketIOServer {
   });
 
   logger.info('Socket.io server initialized');
+  
+  // Setup MongoDB Change Streams for real-time triggers (T134)
+  setupChangeStreams();
+  
   return io;
+}
+
+/**
+ * Setup MongoDB Change Streams to watch collections for real-time updates (T134)
+ * Watches ExpoEvent, Session, and BoothSpace collections
+ * Note: MongoDB collection names are lowercase pluralized by Mongoose
+ */
+function setupChangeStreams(): void {
+  // Wait for connection to be ready
+  if (mongoose.connection.readyState !== 1) {
+    logger.warn('MongoDB not connected, Change Streams will be initialized after connection');
+    mongoose.connection.once('connected', () => {
+      initializeChangeStreams();
+    });
+    return;
+  }
+
+  initializeChangeStreams();
+}
+
+function initializeChangeStreams(): void {
+  if (!mongoose.connection.db) {
+    logger.warn('MongoDB database not available, skipping Change Streams setup');
+    return;
+  }
+
+  try {
+    // Watch ExpoEvent collection for updates
+    // Mongoose uses lowercase pluralized collection names: 'expoevents'
+    const expoEventStream = mongoose.connection.collection('expoevents').watch(
+      [
+        {
+          $match: {
+            operationType: { $in: ['update', 'replace'] },
+          },
+        },
+      ],
+      { fullDocument: 'updateLookup' }
+    );
+
+    expoEventStream.on('change', (change: any) => {
+      logger.debug('ExpoEvent change detected', {
+        operationType: change.operationType,
+        documentKey: change.documentKey,
+      });
+
+      // Handle expo updates via change streams
+      // Note: We also handle this in expoService.updateExpo, but this provides redundancy
+      // Change streams are mainly for monitoring and catching external database changes
+      if (change.operationType === 'update' && change.fullDocument) {
+        // The expoService.updateExpo already broadcasts, so we don't duplicate here
+        // Log for monitoring purposes
+        logger.debug('ExpoEvent updated via change stream', {
+          expoId: change.documentKey._id.toString(),
+          updatedFields: change.updateDescription?.updatedFields,
+        });
+      }
+    });
+
+    expoEventStream.on('error', (error: Error) => {
+      logger.error('ExpoEvent change stream error:', error);
+    });
+
+    // Watch Session collection for deletions
+    const sessionStream = mongoose.connection.collection('sessions').watch(
+      [
+        {
+          $match: {
+            operationType: 'delete',
+          },
+        },
+      ]
+    );
+
+    sessionStream.on('change', (change: any) => {
+      logger.debug('Session deletion detected via change stream', {
+        operationType: change.operationType,
+        sessionId: change.documentKey._id.toString(),
+      });
+
+      // Note: We can't get expoId from delete operation, so we rely on service layer broadcasts
+      // This is mainly for monitoring and future enhancements
+      // The deleteSession service function already broadcasts session-deleted event
+    });
+
+    sessionStream.on('error', (error: Error) => {
+      logger.error('Session change stream error:', error);
+    });
+
+    // Watch BoothSpace collection for updates (booth allocations)
+    const boothSpaceStream = mongoose.connection.collection('boothspaces').watch(
+      [
+        {
+          $match: {
+            operationType: { $in: ['update', 'replace'] },
+            'updateDescription.updatedFields.status': { $exists: true },
+          },
+        },
+      ],
+      { fullDocument: 'updateLookup' }
+    );
+
+    boothSpaceStream.on('change', (change: any) => {
+      logger.debug('BoothSpace change detected', {
+        operationType: change.operationType,
+        documentKey: change.documentKey,
+      });
+
+      // Handle booth status changes
+      // Note: floorPlanService.assignExhibitorToBooth already broadcasts, so this is redundant
+      // Change streams provide monitoring and can catch external changes
+      if (change.operationType === 'update' && change.fullDocument) {
+        const booth = change.fullDocument;
+        const expoId = booth.expo?.toString();
+        
+        if (expoId && booth.status) {
+          if (booth.status === 'occupied' || booth.status === 'reserved') {
+            // Booth allocated - already handled by service layer, but can be used for monitoring
+            logger.debug('Booth allocated via change stream', {
+              boothId: change.documentKey._id.toString(),
+              expoId,
+              status: booth.status,
+            });
+          } else if (booth.status === 'available') {
+            // Booth released - already handled by service layer
+            logger.debug('Booth released via change stream', {
+              boothId: change.documentKey._id.toString(),
+              expoId,
+            });
+          }
+        }
+      }
+    });
+
+    boothSpaceStream.on('error', (error: Error) => {
+      logger.error('BoothSpace change stream error:', error);
+    });
+
+    logger.info('MongoDB Change Streams initialized', {
+      collections: ['expoevents', 'sessions', 'boothspaces'],
+    });
+  } catch (error) {
+    logger.error('Failed to setup Change Streams:', error);
+    // Don't throw - Change Streams are optional enhancement
+    // The application will still work with service-layer broadcasts
+    // This is mainly for monitoring and catching external database changes
+  }
+}
+
+/**
+ * Initialize Change Streams after MongoDB connection is established
+ * Called from setupSocketIO after connection is ready
+ */
+export function initializeChangeStreamsAfterConnection(): void {
+  if (mongoose.connection.readyState === 1) {
+    initializeChangeStreams();
+  }
 }
 
 /**
@@ -140,7 +387,45 @@ export function getIO(): SocketIOServer {
 }
 
 /**
+ * Process broadcast queue with batching and deduplication
+ */
+function processBroadcastQueue(): void {
+  if (broadcastQueue.length === 0) return;
+
+  // Group by room and event type for deduplication
+  const broadcastMap = new Map<string, QueuedBroadcast>();
+
+  broadcastQueue.forEach((item) => {
+    const key = `${item.expoId}:${item.event}`;
+    // Keep the most recent event for each room:event combination
+    const existing = broadcastMap.get(key);
+    if (!existing || item.timestamp > existing.timestamp) {
+      broadcastMap.set(key, item);
+    }
+  });
+
+  // Execute broadcasts
+  broadcastMap.forEach((item) => {
+    const room = `expo-${item.expoId}`;
+    if (io) {
+      io.to(room).emit(item.event, item.data);
+      logger.debug('Broadcasted event to expo room', {
+        expoId: item.expoId,
+        room,
+        event: item.event,
+        connectionsInRoom: activeConnections.get(room)?.size || 0,
+      });
+    }
+  });
+
+  // Clear queue
+  broadcastQueue = [];
+  broadcastTimer = null;
+}
+
+/**
  * Broadcast event to all users in an expo room
+ * Optimized with batching and deduplication (T136)
  * @param expoId Expo ID
  * @param event Event name
  * @param data Event data
@@ -151,12 +436,83 @@ export function broadcastToExpo(expoId: string, event: string, data: unknown): v
     return;
   }
 
-  const room = `expo-${expoId}`;
-  io.to(room).emit(event, data);
-  logger.debug('Broadcasted event to expo room', {
+  // Add to queue
+  broadcastQueue.push({
     expoId,
+    event,
+    data,
+    timestamp: Date.now(),
+  });
+
+  // Batch broadcasts within 100ms window
+  if (!broadcastTimer) {
+    broadcastTimer = setTimeout(() => {
+      processBroadcastQueue();
+    }, 100);
+  }
+
+  // If queue gets too large, process immediately
+  if (broadcastQueue.length > 50) {
+    if (broadcastTimer) {
+      clearTimeout(broadcastTimer);
+      broadcastTimer = null;
+    }
+    processBroadcastQueue();
+  }
+}
+
+/**
+ * Broadcast to user-specific room (e.g., user-{userId})
+ * @param userId User ID
+ * @param event Event name
+ * @param data Event data
+ */
+export function broadcastToUser(userId: string, event: string, data: unknown): void {
+  if (!io) {
+    logger.warn('Attempted to broadcast but Socket.IO server not initialized');
+    return;
+  }
+
+  const room = `user-${userId}`;
+  io.to(room).emit(event, data);
+  logger.debug('Broadcasted event to user room', {
+    userId,
     room,
     event,
   });
+}
+
+/**
+ * Broadcast to exhibitor-specific room (exhibitor-{userId})
+ * Used for exhibitor approval/rejection notifications
+ * @param userId User ID
+ * @param event Event name
+ * @param data Event data
+ */
+export function broadcastToExhibitor(userId: string, event: string, data: unknown): void {
+  if (!io) {
+    logger.warn('Attempted to broadcast but Socket.IO server not initialized');
+    return;
+  }
+
+  const room = `exhibitor-${userId}`;
+  io.to(room).emit(event, data);
+  logger.debug('Broadcasted event to exhibitor room', {
+    userId,
+    room,
+    event,
+  });
+}
+
+/**
+ * Get connection statistics
+ * @returns Connection stats per room
+ */
+export function getConnectionStats(): Record<string, number> {
+  const stats: Record<string, number> = {};
+  activeConnections.forEach((connections, room) => {
+    stats[room] = connections.size;
+  });
+  return stats;
 }
 

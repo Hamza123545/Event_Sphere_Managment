@@ -168,14 +168,25 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
     // Find user by email (include password hash for comparison)
     const user = await User.findOne({ email: input.email.toLowerCase() }).select('+passwordHash');
     if (!user) {
-      logger.warn('Login attempt with invalid email', { email: input.email.toLowerCase() });
+      // Security audit logging (T235)
+      logger.warn('Login attempt failed: email not found', {
+        action: 'login_failed',
+        email: input.email.toLowerCase(),
+        timestamp: new Date().toISOString(),
+      });
       throw new CustomError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
     }
 
     // Compare password
     const isPasswordValid = await comparePassword(input.password, user.passwordHash);
     if (!isPasswordValid) {
-      logger.warn('Login attempt with invalid password', { userId: user._id.toString(), email: user.email });
+      // Security audit logging (T235)
+      logger.warn('Login attempt failed: invalid password', {
+        action: 'login_failed',
+        userId: user._id.toString(),
+        email: user.email,
+        timestamp: new Date().toISOString(),
+      });
       throw new CustomError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
     }
 
@@ -183,7 +194,14 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
     user.lastLogin = new Date();
     await user.save();
 
-    logger.info('User logged in successfully', { userId: user._id.toString(), email: user.email, role: user.role });
+    // Security audit logging (T235)
+    logger.info('User logged in successfully', {
+      action: 'login_success',
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      timestamp: new Date().toISOString(),
+    });
 
     // Generate JWT token
     const tokenPayload: TokenPayload = {
@@ -349,7 +367,13 @@ export async function forgotPassword(email: string): Promise<void> {
     user.passwordResetExpires = resetTokenExpiry;
     await user.save();
 
-    logger.info('Password reset token generated', { userId: user._id.toString(), email: user.email });
+    // Security audit logging (T235)
+    logger.info('Password reset token generated', {
+      action: 'password_reset_requested',
+      userId: user._id.toString(),
+      email: user.email,
+      timestamp: new Date().toISOString(),
+    });
 
     // TODO: Send password reset email with token (implement in email service)
     // The email should contain a link like: https://app.eventsphere.com/reset-password?token={resetToken}
@@ -393,7 +417,13 @@ export async function resetPassword(token: string, newPassword: string): Promise
     user.passwordResetExpires = undefined;
     await user.save();
 
-    logger.info('Password reset successfully', { userId: user._id.toString(), email: user.email });
+    // Security audit logging (T235)
+    logger.info('Password reset completed successfully', {
+      action: 'password_reset_completed',
+      userId: user._id.toString(),
+      email: user.email,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;

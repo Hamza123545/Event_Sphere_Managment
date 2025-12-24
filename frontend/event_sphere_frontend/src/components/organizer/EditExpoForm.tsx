@@ -1,0 +1,364 @@
+/**
+ * EditExpoForm Component
+ * Implements T057: User Story 1 - Edit expo form
+ * Pre-populated fields, save/cancel, validation
+ */
+
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  CircularProgress,
+} from '@mui/material';
+import type { UpdateExpoRequest, ExpoDetail } from '../../types/expo';
+
+interface EditExpoFormProps {
+  open: boolean;
+  expo: ExpoDetail | null;
+  onClose: () => void;
+  onSubmit: (expoId: string, data: UpdateExpoRequest) => Promise<void>;
+}
+
+export default function EditExpoForm({ open, expo, onClose, onSubmit }: EditExpoFormProps) {
+  const [formData, setFormData] = useState<UpdateExpoRequest>({
+    title: '',
+    description: '',
+    theme: '',
+    dateRange: {
+      startDate: '',
+      endDate: '',
+    },
+        location: {
+          venueName: '',
+          address: '',
+          city: '',
+          country: '',
+        },
+    status: 'draft',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Populate form when expo changes
+  useEffect(() => {
+    if (expo && open) {
+      setFormData({
+        title: expo.title || '',
+        description: expo.description || '',
+        theme: expo.theme || '',
+        dateRange: {
+          startDate: expo.dateRange?.startDate || '',
+          endDate: expo.dateRange?.endDate || '',
+        },
+        location: {
+          venueName: expo.location?.venueName || '',
+          address: expo.location?.address || '',
+          city: expo.location?.city || '',
+          country: expo.location?.country || '',
+        },
+        status: expo.status || 'draft',
+      });
+      setErrors({});
+      setError(null);
+    }
+  }, [expo, open]);
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Title: 5-200 characters
+    if (!formData.title?.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.length < 5) {
+      newErrors.title = 'Title must be at least 5 characters';
+    } else if (formData.title.length > 200) {
+      newErrors.title = 'Title must be no more than 200 characters';
+    }
+
+    // Description: 20-5000 characters
+    if (!formData.description?.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length < 20) {
+      newErrors.description = 'Description must be at least 20 characters';
+    } else if (formData.description.length > 5000) {
+      newErrors.description = 'Description must be no more than 5000 characters';
+    }
+
+    // Theme: optional, but if provided should be 3-100 characters
+    if (formData.theme && formData.theme.trim()) {
+      if (formData.theme.length < 3) {
+        newErrors.theme = 'Theme must be at least 3 characters';
+      } else if (formData.theme.length > 100) {
+        newErrors.theme = 'Theme must be no more than 100 characters';
+      }
+    }
+
+    // Date range validation
+    if (formData.dateRange) {
+      if (formData.dateRange.startDate && formData.dateRange.endDate) {
+        const startDate = new Date(formData.dateRange.startDate);
+        const endDate = new Date(formData.dateRange.endDate);
+        if (endDate <= startDate) {
+          newErrors.endDate = 'End date must be after start date';
+        }
+      }
+    }
+
+    // Location validation
+    if (formData.location) {
+      if (!formData.location.city?.trim()) {
+        newErrors.city = 'City is required';
+      }
+      if (!formData.location.country?.trim()) {
+        newErrors.country = 'Country is required';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!expo || !validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onSubmit(expo.expoId, formData);
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update expo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (field: string) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: any } }
+  ) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      if (parent === 'dateRange' && formData.dateRange) {
+        setFormData({
+          ...formData,
+          dateRange: {
+            ...formData.dateRange,
+            [child]: e.target.value,
+          },
+        });
+      } else if (parent === 'location' && formData.location) {
+        setFormData({
+          ...formData,
+          location: {
+            ...formData.location,
+            [child]: e.target.value,
+          },
+        });
+      }
+    } else {
+      setFormData({ ...formData, [field]: e.target.value });
+    }
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
+    }
+    if (error) {
+      setError(null);
+    }
+  };
+
+  if (!expo) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Edit Expo Event</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            {/* Title */}
+            <Grid item xs={12}>
+              <TextField
+                required
+                fullWidth
+                label="Title"
+                value={formData.title}
+                onChange={handleChange('title')}
+                error={!!errors.title}
+                helperText={errors.title}
+                disabled={isLoading}
+                inputProps={{ minLength: 5, maxLength: 200 }}
+              />
+            </Grid>
+
+            {/* Description */}
+            <Grid item xs={12}>
+              <TextField
+                required
+                fullWidth
+                multiline
+                rows={4}
+                label="Description"
+                value={formData.description}
+                onChange={handleChange('description')}
+                error={!!errors.description}
+                helperText={errors.description || 'Minimum 20 characters'}
+                disabled={isLoading}
+                inputProps={{ minLength: 20, maxLength: 5000 }}
+              />
+            </Grid>
+
+            {/* Theme */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Theme (Optional)"
+                value={formData.theme || ''}
+                onChange={handleChange('theme')}
+                error={!!errors.theme}
+                helperText={errors.theme}
+                disabled={isLoading}
+              />
+            </Grid>
+
+            {/* Status */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  label="Status"
+                  onChange={(e) =>
+                    handleChange('status')({
+                      target: { value: e.target.value },
+                    } as any)
+                  }
+                  disabled={isLoading}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="upcoming">Upcoming</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Start Date */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="Start Date"
+                type="date"
+                value={formData.dateRange?.startDate || ''}
+                onChange={handleChange('dateRange.startDate')}
+                error={!!errors.startDate}
+                helperText={errors.startDate}
+                disabled={isLoading}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            {/* End Date */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="End Date"
+                type="date"
+                value={formData.dateRange?.endDate || ''}
+                onChange={handleChange('dateRange.endDate')}
+                error={!!errors.endDate}
+                helperText={errors.endDate}
+                disabled={isLoading}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            {/* Venue */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Venue (Optional)"
+                value={formData.location?.venueName || ''}
+                onChange={handleChange('location.venueName')}
+                disabled={isLoading}
+              />
+            </Grid>
+
+            {/* Address */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Address (Optional)"
+                value={formData.location?.address || ''}
+                onChange={handleChange('location.address')}
+                disabled={isLoading}
+              />
+            </Grid>
+
+            {/* City */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="City"
+                value={formData.location?.city || ''}
+                onChange={handleChange('location.city')}
+                error={!!errors.city}
+                helperText={errors.city}
+                disabled={isLoading}
+              />
+            </Grid>
+
+            {/* Country */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="Country"
+                value={formData.location?.country || ''}
+                onChange={handleChange('location.country')}
+                error={!!errors.country}
+                helperText={errors.country}
+                disabled={isLoading}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>
+            {isLoading ? <CircularProgress size={24} /> : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
+

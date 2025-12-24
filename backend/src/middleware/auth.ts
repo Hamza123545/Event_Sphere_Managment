@@ -63,6 +63,7 @@ export function extractUser(
  * Middleware to require authentication
  * Returns 401 if no valid token is present
  * Implements constitutional requirement for Security-First principle
+ * Security audit logging: T235
  */
 export function requireAuth(
   req: AuthRequest,
@@ -73,9 +74,14 @@ export function requireAuth(
     const token = extractToken(req);
 
     if (!token) {
-      logger.warn('Authentication required but no token provided', {
+      // Security audit logging (T235)
+      logger.warn('Authentication attempt failed: no token provided', {
+        action: 'auth_failed',
         path: req.path,
         method: req.method,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        timestamp: new Date().toISOString(),
       });
       res.status(401).json({
         success: false,
@@ -88,15 +94,23 @@ export function requireAuth(
     const decoded = verifyToken(token);
     req.user = decoded;
 
-    logger.debug('User authenticated', {
+    // Security audit logging (T235) - successful authentication
+    logger.info('User authenticated successfully', {
+      action: 'auth_success',
       userId: decoded.userId,
       role: decoded.role,
+      email: decoded.email,
       path: req.path,
+      method: req.method,
+      ip: req.ip,
+      timestamp: new Date().toISOString(),
     });
 
     next();
   } catch (error) {
-    logger.warn('Authentication failed', {
+    // Security audit logging (T235) - authentication failure
+    logger.warn('Authentication attempt failed: invalid token', {
+      action: 'auth_failed',
       error: error instanceof Error ? error.message : 'Unknown error',
       path: req.path,
       method: req.method,

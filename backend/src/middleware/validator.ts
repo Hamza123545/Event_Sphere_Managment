@@ -4,8 +4,11 @@ import { logger } from '../utils/logger';
 
 /**
  * Request validation middleware using express-validator
- * Implements constitutional requirement for Input Validation & Sanitization
+ * Implements constitutional requirement for Input Validation & Sanitization (T229)
  * All user input MUST be validated and sanitized before processing
+ * 
+ * Note: express-validator automatically sanitizes inputs with .trim(), .escape(), etc.
+ * This prevents XSS attacks by escaping HTML characters
  */
 
 /**
@@ -176,4 +179,97 @@ export const validateBoolean = (field: string, required: boolean = true) => {
   }
   return validator.isBoolean().withMessage(`${field} must be a boolean`);
 };
+
+// Floor plan validation
+export const validateFloorPlanName = body('name')
+  .trim()
+  .isLength({ min: 3, max: 200 })
+  .withMessage('Floor plan name must be between 3 and 200 characters');
+
+export const validateFloorPlanDimensions = [
+  body('dimensions.width')
+    .isFloat({ min: 10, max: 1000 })
+    .withMessage('Floor plan width must be between 10 and 1000 meters'),
+  body('dimensions.height')
+    .isFloat({ min: 10, max: 1000 })
+    .withMessage('Floor plan height must be between 10 and 1000 meters'),
+];
+
+// Booth space validation
+export const validateBoothIdentifier = body('identifier')
+  .trim()
+  .isLength({ min: 1, max: 50 })
+  .withMessage('Booth identifier must be between 1 and 50 characters')
+  .matches(/^[A-Za-z0-9\-_]+$/)
+  .withMessage('Booth identifier can only contain letters, numbers, hyphens, and underscores');
+
+export const validateBoothSize = [
+  body('size.width')
+    .isFloat({ min: 0.5, max: 100 })
+    .withMessage('Booth width must be between 0.5 and 100 meters'),
+  body('size.height')
+    .isFloat({ min: 0.5, max: 100 })
+    .withMessage('Booth height must be between 0.5 and 100 meters'),
+];
+
+export const validateBoothLocation = [
+  body('location.x')
+    .isFloat({ min: 0 })
+    .withMessage('Booth x coordinate must be a positive number'),
+  body('location.y')
+    .isFloat({ min: 0 })
+    .withMessage('Booth y coordinate must be a positive number'),
+];
+
+export const validateBoothPriceTier = body('priceTier')
+  .optional()
+  .isIn(['standard', 'premium', 'deluxe'])
+  .withMessage('Price tier must be one of: standard, premium, deluxe');
+
+// Message validation (T164)
+export const validateMessageContent = body('content')
+  .trim()
+  .isLength({ min: 1, max: 5000 })
+  .withMessage('Message content must be between 1 and 5000 characters');
+
+export const validateMessageSubject = body('subject')
+  .optional()
+  .trim()
+  .isLength({ max: 200 })
+  .withMessage('Subject must be at most 200 characters');
+
+export const validateMessageContext = body('context')
+  .isIn(['general-inquiry', 'exhibitor-collaboration', 'support-request', 'organizer-communication'])
+  .withMessage('Invalid message context');
+
+export const validateRecipientId = body('recipientId')
+  .notEmpty()
+  .withMessage('Recipient ID is required')
+  .isMongoId()
+  .withMessage('Invalid recipient ID format');
+
+export const validateRelatedExpoId = body('relatedExpoId')
+  .optional()
+  .isMongoId()
+  .withMessage('Invalid related expo ID format');
+
+// Feedback validation (T213)
+export const validateFeedbackCategory = body('category')
+  .isIn(['suggestion', 'bug-report', 'support-request'])
+  .withMessage('Category must be one of: suggestion, bug-report, support-request');
+
+export const validateFeedbackSubject = body('subject')
+  .trim()
+  .isLength({ min: 5, max: 200 })
+  .withMessage('Subject must be between 5 and 200 characters');
+
+export const validateFeedbackMessage = body('message')
+  .trim()
+  .isLength({ min: 10, max: 5000 })
+  .withMessage('Message must be between 10 and 5000 characters');
+
+export const validateFeedbackStatus = body('status')
+  .optional()
+  .isIn(['pending', 'reviewed', 'resolved', 'closed'])
+  .withMessage('Status must be one of: pending, reviewed, resolved, closed');
 

@@ -148,10 +148,13 @@ export const useExpoStore = create<ExpoState>((set) => ({
     set({ error: null });
   },
 
-  // Subscribe to expo updates (real-time)
+  // Subscribe to expo updates (real-time) (T137)
   subscribeToExpoUpdates: (expoId: string) => {
     // Join expo room for real-time updates
     joinExpoRoom(expoId);
+
+    const socketInstance = getSocket();
+    if (!socketInstance) return;
 
     // Listen for expo-updated event
     const handleExpoUpdated = (data: ExpoUpdatedEvent) => {
@@ -185,25 +188,47 @@ export const useExpoStore = create<ExpoState>((set) => ({
       }
     };
 
-    const socketInstance = getSocket();
-    if (socketInstance) {
-      socketInstance.on('expo-updated', handleExpoUpdated as any);
-      // Store handler for cleanup
-      (socketInstance as any)._expoUpdateHandler = handleExpoUpdated;
-    }
+    // Listen for schedule-changed event (T137)
+    const handleScheduleChanged = (data: any) => {
+      if (data.expoId === expoId) {
+        // Schedule updates are handled by attendeeStore, but we can log it here
+        console.log('Schedule changed for expo:', expoId);
+      }
+    };
+
+    // Listen for session-deleted event (T137)
+    const handleSessionDeleted = (data: any) => {
+      if (data.expoId === expoId) {
+        // Session deletion updates are handled by attendeeStore
+        console.log('Session deleted for expo:', expoId, data.sessionId);
+      }
+    };
+
+    socketInstance.on('expo-updated', handleExpoUpdated as any);
+    socketInstance.on('schedule-changed', handleScheduleChanged);
+    socketInstance.on('session-deleted', handleSessionDeleted);
+
+    // Store handlers for cleanup
+    (socketInstance as any)._expoUpdateHandlers = {
+      expoUpdated: handleExpoUpdated,
+      scheduleChanged: handleScheduleChanged,
+      sessionDeleted: handleSessionDeleted,
+    };
   },
 
   // Unsubscribe from expo updates
   unsubscribeFromExpoUpdates: (expoId: string) => {
     leaveExpoRoom(expoId);
     
-    // Remove event listener
+    // Remove event listeners (T137)
     const socketInstance = getSocket();
     if (socketInstance) {
-      const handler = (socketInstance as any)._expoUpdateHandler;
-      if (handler) {
-        socketInstance.off('expo-updated', handler);
-        delete (socketInstance as any)._expoUpdateHandler;
+      const handlers = (socketInstance as any)._expoUpdateHandlers;
+      if (handlers) {
+        socketInstance.off('expo-updated', handlers.expoUpdated);
+        socketInstance.off('schedule-changed', handlers.scheduleChanged);
+        socketInstance.off('session-deleted', handlers.sessionDeleted);
+        delete (socketInstance as any)._expoUpdateHandlers;
       }
     }
   },

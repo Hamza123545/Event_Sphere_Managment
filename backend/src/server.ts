@@ -7,6 +7,7 @@ import database from './config/database';
 import { logger } from './utils/logger';
 import routes from './routes';
 import { setupSocketIO } from './services/realtime';
+import { startScheduler } from './services/schedulerService';
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -40,6 +41,9 @@ async function startServer(): Promise<void> {
     logger.info('Connecting to MongoDB...');
     await database.connect(MONGODB_URI as string);
     logger.info('MongoDB connected successfully');
+
+    // Start scheduler service for background jobs (T194)
+    startScheduler();
 
     // Create logs directory if it doesn't exist (for Winston file transports)
     const fs = await import('fs');
