@@ -4,12 +4,20 @@
  */
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Container, Box, Button } from '@mui/material';
+import { Box, Alert, Typography } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import FloorPlanViewer from '../../components/exhibitor/FloorPlanViewer';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import { useEffect } from 'react';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function FloorPlanPage() {
   const { expoId } = useParams<{ expoId: string }>();
@@ -31,38 +39,64 @@ export default function FloorPlanPage() {
 
   if (!expoId) {
     return (
-      <>
-        <AppBar title="Exhibitor Portal" />
-        <Container>Invalid expo ID</Container>
-      </>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
+          <Alert severity="error" sx={{ bgcolor: `${activeTheme.error}20`, border: `1px solid ${activeTheme.error}30` }}>
+            Invalid expo ID
+          </Alert>
+        </Box>
+      </PageContainer>
     );
   }
 
   if (!profile) {
     return (
-      <>
-        <AppBar title="Exhibitor Portal" />
-        <Container>
-          <Button startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 2 }}>
-            Back to Dashboard
-          </Button>
-          <Box>No approved profile found for this expo. Please register and wait for approval.</Box>
-        </Container>
-      </>
+      <PageContainer>
+        <BackgroundGlows />
+        <ModernNavbar />
+        <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            sx={{ mb: 4 }}
+          >
+            <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 3 }}>
+              Back to Dashboard
+            </ActionButton>
+          </MotionBox>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography sx={{ color: activeTheme.textSecondary }}>
+                No approved profile found for this expo. Please register and wait for approval.
+              </Typography>
+            </Box>
+          </GlassCard>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Exhibitor Portal" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 2 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 3 }}>
+            Back to Dashboard
+          </ActionButton>
+        </MotionBox>
 
         <FloorPlanViewer expoId={expoId} profileId={profile.profileId} />
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

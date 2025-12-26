@@ -65,24 +65,35 @@ router.get(
       .optional()
       .isMongoId()
       .withMessage('Invalid assignedTo ID'),
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ]),
   asyncHandler(async (req: AuthRequest, res) => {
     const userRole = req.user!.role;
 
-    // If admin/organizer, return queue with filters
+    // If admin/organizer, return queue with filters and pagination
     if (userRole === 'admin' || userRole === 'organizer') {
-      const queue = await feedbackService.getFeedbackQueue(
+      const result = await feedbackService.getFeedbackQueue(
         req.user!.userId,
         userRole,
         {
           status: req.query.status as any,
           category: req.query.category as any,
           assignedTo: req.query.assignedTo as string,
+          page: req.query.page ? parseInt(req.query.page as string) : undefined,
+          limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
         }
       );
       res.json({
         success: true,
-        data: queue,
+        data: result.feedbacks,
+        pagination: result.pagination,
       });
       return;
     }
@@ -105,37 +116,11 @@ router.get(
   '/:id',
   validate([validateObjectId('id')]),
   asyncHandler(async (req: AuthRequest, res) => {
-    const feedbackId = req.params.id;
-    const userRole = req.user!.role;
-
-    // Get queue or user feedback and find the specific one
-    if (userRole === 'admin' || userRole === 'organizer') {
-      const queue = await feedbackService.getFeedbackQueue(req.user!.userId, userRole);
-      const feedback = queue.find((f) => f.feedbackId === feedbackId);
-      if (!feedback) {
-        res.status(404).json({
-          success: false,
-          message: 'Feedback not found',
-        });
-        return;
-      }
-      res.json({
-        success: true,
-        data: feedback,
-      });
-      return;
-    }
-
-    // User can only see their own feedback
-    const userFeedback = await feedbackService.getUserFeedback(req.user!.userId);
-    const feedback = userFeedback.find((f) => f.feedbackId === feedbackId);
-    if (!feedback) {
-      res.status(404).json({
-        success: false,
-        message: 'Feedback not found',
-      });
-      return;
-    }
+    const feedback = await feedbackService.getFeedbackById(
+      req.params.id,
+      req.user!.userId,
+      req.user!.role
+    );
     res.json({
       success: true,
       data: feedback,

@@ -7,20 +7,25 @@
 
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
-  Paper,
   Grid,
-  Button,
   Avatar,
   Divider,
   Alert,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import NotificationPreferences from '../../components/attendee/NotificationPreferences';
 import { useAuthStore } from '../../stores/authStore';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -28,12 +33,14 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <>
-        <AppBar title="Profile" />
-        <Container>
-          <Alert severity="error">User not found</Alert>
-        </Container>
-      </>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
+          <Alert severity="error" sx={{ bgcolor: `${activeTheme.error}20`, border: `1px solid ${activeTheme.error}30` }}>
+            User not found
+          </Alert>
+        </Box>
+      </PageContainer>
     );
   }
 
@@ -56,69 +63,78 @@ export default function ProfilePage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Profile" />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(getDashboardPath())}
-          sx={{ mb: 3 }}
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
         >
-          Back to Dashboard
-        </Button>
+          <ActionButton
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(getDashboardPath())}
+            sx={{ mb: 3 }}
+          >
+            Back to Dashboard
+          </ActionButton>
+        </MotionBox>
 
         <Grid container spacing={3}>
           {/* User Profile Information */}
           <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3 }}>
+            <GlassCard>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                 <Avatar
                   sx={{
                     width: 100,
                     height: 100,
-                    bgcolor: 'primary.main',
+                    bgcolor: activeTheme.accent,
                     fontSize: '2.5rem',
                     mb: 2,
+                    border: `3px solid ${activeTheme.accentGlow}`,
                   }}
                 >
                   {userInitials}
                 </Avatar>
-                <Typography variant="h5" gutterBottom>
+                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5, color: activeTheme.textPrimary }}>
                   {user.profile?.firstName && user.profile?.lastName
                     ? `${user.profile.firstName} ${user.profile.lastName}`
                     : user.email}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
                   {user.email}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography variant="body2" sx={{ color: activeTheme.textSecondary, mt: 1 }}>
                   Role: {user.role}
                 </Typography>
               </Box>
 
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: 2, borderColor: activeTheme.border }} />
 
               <Box>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Profile Information
+                <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 2 }}>
+                  PROFILE INFORMATION
                 </Typography>
                 {user.profile?.firstName && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>First Name:</strong> {user.profile.firstName}
+                  <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textPrimary }}>
+                    <strong style={{ color: activeTheme.textSecondary }}>First Name:</strong> {user.profile.firstName}
                   </Typography>
                 )}
                 {user.profile?.lastName && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Last Name:</strong> {user.profile.lastName}
+                  <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textPrimary }}>
+                    <strong style={{ color: activeTheme.textSecondary }}>Last Name:</strong> {user.profile.lastName}
                   </Typography>
                 )}
                 {user.profile?.phone && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Phone:</strong> {user.profile.phone}
+                  <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textPrimary }}>
+                    <strong style={{ color: activeTheme.textSecondary }}>Phone:</strong> {user.profile.phone}
                   </Typography>
                 )}
               </Box>
-            </Paper>
+            </GlassCard>
           </Grid>
 
           {/* Notification Preferences */}
@@ -126,8 +142,8 @@ export default function ProfilePage() {
             <NotificationPreferences />
           </Grid>
         </Grid>
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

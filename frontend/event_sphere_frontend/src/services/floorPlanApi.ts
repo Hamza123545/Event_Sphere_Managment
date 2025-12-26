@@ -23,10 +23,36 @@ export async function getFloorPlan(expoId: string): Promise<FloorPlanDetail> {
 
 /**
  * Create floor plan for expo
+ * Supports both file upload and imageUrl
  */
-export async function createFloorPlan(expoId: string, request: CreateFloorPlanRequest): Promise<FloorPlan> {
-  const response = await api.post<{ success: boolean; data: FloorPlan }>(`/expos/${expoId}/floor-plan`, request);
-  return response.data.data;
+export async function createFloorPlan(expoId: string, request: CreateFloorPlanRequest & { imageFile?: File }): Promise<FloorPlan> {
+  // If imageFile is present, use FormData; otherwise use JSON
+  if (request.imageFile) {
+    const formData = new FormData();
+    formData.append('name', request.name);
+    formData.append('dimensions.width', request.dimensions.width.toString());
+    formData.append('dimensions.height', request.dimensions.height.toString());
+    if (request.metadata?.scale) {
+      formData.append('metadata.scale', request.metadata.scale.toString());
+    }
+    formData.append('image', request.imageFile);
+    
+    const response = await api.post<{ success: boolean; data: FloorPlan }>(
+      `/expos/${expoId}/floor-plan`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data.data;
+  } else {
+    // Use JSON for URL-based image
+    const {...jsonRequest } = request;
+    const response = await api.post<{ success: boolean; data: FloorPlan }>(`/expos/${expoId}/floor-plan`, jsonRequest);
+    return response.data.data;
+  }
 }
 
 /**

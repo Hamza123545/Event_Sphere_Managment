@@ -74,7 +74,8 @@ export function validatePasswordStrength(password: string): {
     errors.push('Password must contain at least one number');
   }
 
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  // Simple regex: match any character that is not alphanumeric
+  if (!/[^a-zA-Z0-9]/.test(password)) {
     errors.push('Password must contain at least one special character');
   }
 

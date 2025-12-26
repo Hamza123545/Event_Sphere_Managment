@@ -7,22 +7,27 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
-  Button,
-  Paper,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { ArrowBack, FilterList } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassContainer,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 import FeedbackCard from '../../components/organizer/FeedbackCard';
 import RespondToFeedbackDialog from '../../components/organizer/RespondToFeedbackDialog';
 import { useFeedbackStore } from '../../stores/feedbackStore';
@@ -36,7 +41,6 @@ export default function FeedbackQueuePage() {
     error,
     getFeedbackQueue,
     updateFeedbackStatus,
-    assignFeedback,
     respondToFeedback,
     clearError,
   } = useFeedbackStore();
@@ -45,10 +49,9 @@ export default function FeedbackQueuePage() {
   const [categoryFilter, setCategoryFilter] = useState<FeedbackCategory | 'all'>('all');
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackSubmission | null>(null);
   const [respondDialogOpen, setRespondDialogOpen] = useState(false);
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   useEffect(() => {
-    const filters: any = {};
+    const filters: Record<string, FeedbackStatus | FeedbackCategory> = {};
     if (statusFilter !== 'all') filters.status = statusFilter;
     if (categoryFilter !== 'all') filters.category = categoryFilter;
     getFeedbackQueue(filters);
@@ -59,10 +62,6 @@ export default function FeedbackQueuePage() {
     setRespondDialogOpen(true);
   };
 
-  const handleAssign = (feedback: FeedbackSubmission) => {
-    setSelectedFeedback(feedback);
-    setAssignDialogOpen(true);
-  };
 
   const handleRespondSubmit = async (feedbackId: string, response: string, status?: FeedbackStatus) => {
     await respondToFeedback(feedbackId, response);
@@ -72,7 +71,7 @@ export default function FeedbackQueuePage() {
     setRespondDialogOpen(false);
     setSelectedFeedback(null);
     // Refresh queue
-    const filters: any = {};
+    const filters: Record<string, FeedbackStatus | FeedbackCategory> = {};
     if (statusFilter !== 'all') filters.status = statusFilter;
     if (categoryFilter !== 'all') filters.category = categoryFilter;
     getFeedbackQueue(filters);
@@ -81,29 +80,50 @@ export default function FeedbackQueuePage() {
   const filteredFeedback = feedbackQueue; // Already filtered by API
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Feedback Queue" />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 3 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 3 }}>
+            Back to Dashboard
+          </ActionButton>
+          <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: '-2px' }}>
+            Feedback Queue
+          </Typography>
+        </MotionBox>
 
         {error && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 4 }}>
             <ErrorAlert message={error} onClose={clearError} severity="error" />
           </Box>
         )}
 
         {/* Filters */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <FilterList />
+        <GlassContainer sx={{ p: 3, mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <FilterList sx={{ color: activeTheme.accent }} />
             <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel>Status</InputLabel>
+              <InputLabel sx={{ color: activeTheme.textSecondary }}>Status</InputLabel>
               <Select
                 value={statusFilter}
                 label="Status"
                 onChange={(e) => setStatusFilter(e.target.value as FeedbackStatus | 'all')}
+                sx={{
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.accent,
+                  },
+                }}
               >
                 <MenuItem value="all">All Statuses</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
@@ -114,11 +134,21 @@ export default function FeedbackQueuePage() {
             </FormControl>
 
             <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel>Category</InputLabel>
+              <InputLabel sx={{ color: activeTheme.textSecondary }}>Category</InputLabel>
               <Select
                 value={categoryFilter}
                 label="Category"
                 onChange={(e) => setCategoryFilter(e.target.value as FeedbackCategory | 'all')}
+                sx={{
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.accent,
+                  },
+                }}
               >
                 <MenuItem value="all">All Categories</MenuItem>
                 <MenuItem value="suggestion">Suggestion</MenuItem>
@@ -127,22 +157,35 @@ export default function FeedbackQueuePage() {
               </Select>
             </FormControl>
           </Box>
-        </Paper>
+        </GlassContainer>
 
         {/* Feedback List */}
         {isLoading ? (
-          <LoadingSpinner />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
         ) : filteredFeedback.length === 0 ? (
-          <Alert severity="info">No feedback submissions found.</Alert>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography sx={{ color: activeTheme.textSecondary }}>
+                No feedback submissions found.
+              </Typography>
+            </Box>
+          </GlassCard>
         ) : (
-          <Grid container spacing={2}>
-            {filteredFeedback.map((feedback) => (
+          <Grid container spacing={3}>
+            {filteredFeedback.map((feedback, index) => (
               <Grid item xs={12} key={feedback.feedbackId}>
-                <FeedbackCard
-                  feedback={feedback}
-                  onRespond={handleRespond}
-                  onAssign={handleAssign}
-                />
+                <MotionBox
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <FeedbackCard
+                    feedback={feedback}
+                    onRespond={handleRespond}
+                  />
+                </MotionBox>
               </Grid>
             ))}
           </Grid>
@@ -159,8 +202,8 @@ export default function FeedbackQueuePage() {
           onRespond={handleRespondSubmit}
           isLoading={isLoading}
         />
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

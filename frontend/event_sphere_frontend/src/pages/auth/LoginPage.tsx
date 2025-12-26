@@ -7,21 +7,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
-  Paper,
   TextField,
-  Button,
   Typography,
   Box,
   Link,
-  Alert,
   CircularProgress,
 } from '@mui/material';
+import { AutoAwesome } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '../../stores/authStore';
 import { login as loginApi } from '../../services/authApi';
 import { connectSocket } from '../../services/socket';
 import { parseApiError } from '../../utils/errorHandler';
 import type { LoginRequest } from '../../types/auth';
+import {
+  PageContainer,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+  BackgroundGlows,
+} from '../../theme/designSystem';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -112,93 +118,179 @@ export default function LoginPage() {
   };
 
   return (
-    <Container component="main" maxWidth="sm">
+    <PageContainer>
+      <BackgroundGlows />
       <Box
         sx={{
-          marginTop: 8,
+          minHeight: '100vh',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <Typography component="h1" variant="h4" gutterBottom>
-            EventSphere
-          </Typography>
-          <Typography component="h2" variant="h5" gutterBottom>
-            Sign In
-          </Typography>
+        <Box sx={{ width: '100%', maxWidth: 450, px: 3 }}>
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <GlassCard sx={{ p: 5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: activeTheme.accent,
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mr: 2,
+                  }}
+                >
+                  <AutoAwesome sx={{ color: '#fff', fontSize: '1.5rem' }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-1px' }}>
+                  EventSphere
+                </Typography>
+              </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, textAlign: 'center' }}>
+                Welcome Back
+              </Typography>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange('email')}
-              error={!!errors.email}
-              helperText={errors.email}
-              disabled={isLoading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange('password')}
-              error={!!errors.password}
-              helperText={errors.password}
-              disabled={isLoading}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={isLoading}
-            >
-              {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
-            </Button>
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => navigate('/register')}
-                sx={{ cursor: 'pointer' }}
-              >
-                Don't have an account? Sign Up
-              </Link>
-            </Box>
-          </Box>
-        </Paper>
+              {error && (
+                <Box
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    bgcolor: `${activeTheme.error}20`,
+                    border: `1px solid ${activeTheme.error}30`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: activeTheme.error }}>
+                    {error}
+                  </Typography>
+                </Box>
+              )}
+
+              <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="email"
+                  label="Email Address"
+                  name="email"
+                  autoComplete="email"
+                  autoFocus
+                  value={formData.email}
+                  onChange={handleChange('email')}
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                    mb: 2,
+                  }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Password"
+                  type="password"
+                  id="password"
+                  autoComplete="current-password"
+                  value={formData.password}
+                  onChange={handleChange('password')}
+                  error={!!errors.password}
+                  helperText={errors.password}
+                  disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                    mb: 3,
+                  }}
+                />
+                <ActionButton
+                  type="submit"
+                  primary
+                  fullWidth
+                  disabled={isLoading}
+                  sx={{ mb: 3, py: 1.5 }}
+                >
+                  {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Sign In'}
+                </ActionButton>
+                <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Link
+                    component="button"
+                    type="button"
+                    variant="body2"
+                    onClick={() => navigate('/forgot-password')}
+                    sx={{
+                      cursor: 'pointer',
+                      color: activeTheme.textSecondary,
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: activeTheme.accent,
+                      },
+                    }}
+                  >
+                    Forgot Password?
+                  </Link>
+                  <Link
+                    component="button"
+                    type="button"
+                    variant="body2"
+                    onClick={() => navigate('/register')}
+                    sx={{
+                      cursor: 'pointer',
+                      color: activeTheme.accent,
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Don't have an account? Sign Up
+                  </Link>
+                </Box>
+              </Box>
+            </GlassCard>
+          </MotionBox>
+        </Box>
       </Box>
-    </Container>
+    </PageContainer>
   );
 }
 

@@ -1,0 +1,173 @@
+# ============================================
+# EventSphere Management Platform - Backend
+# Environment Variables Configuration
+# ============================================
+#
+# Copy this file to .env and update with your actual values
+# DO NOT commit .env file to version control!
+#
+# Generate secure secrets:
+# - JWT_SECRET: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+# ============================================
+
+# ============================================
+# Server Configuration
+# ============================================
+NODE_ENV=development
+PORT=5000
+
+# Base URL for file uploads and public endpoints
+BASE_URL=http://localhost:5000
+
+# ============================================
+# Database Configuration (MongoDB)
+# ============================================
+# Option A: Local MongoDB
+MONGODB_URI=mongodb://localhost:27017/eventsphere
+
+# Option B: MongoDB Atlas (Cloud)
+# MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/eventsphere?retryWrites=true&w=majority
+
+# ============================================
+# Authentication & Security
+# ============================================
+# JWT Secret - MUST be changed in production!
+# Generate a secure secret: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-minimum-32-characters
+
+# JWT Token Expiration Time (examples: 1h, 24h, 7d, 30d)
+JWT_EXPIRES_IN=7d
+
+# ============================================
+# CORS & Frontend Configuration
+# ============================================
+# Frontend URL for CORS and Socket.io
+FRONTEND_URL=http://localhost:3000
+
+# Socket.io CORS Origin (can be same as FRONTEND_URL)
+SOCKET_IO_CORS_ORIGIN=http://localhost:3000
+
+# Allowed CORS origins (comma-separated list, optional override)
+# ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://yourdomain.com
+
+# ============================================
+# Redis Configuration
+# ============================================
+# Redis is required for:
+# - Caching (expo lists, session schedules)
+# - Bull job queues (analytics, emails, reports)
+# - Socket.io horizontal scaling (Redis adapter)
+#
+# Option A: Local Redis
+REDIS_URL=redis://localhost:6379
+
+# Option B: Redis Cloud/Labs (URL format - RECOMMENDED)
+# Format: redis://username:password@host:port
+# Example for Redis Cloud:
+# REDIS_URL=redis://default:your-password-here@redis-11429.c270.us-east-1-3.ec2.cloud.redislabs.com:11429
+# 
+# To construct the URL from separate values:
+# - username: usually "default" for Redis Cloud
+# - password: your Redis password
+# - host: your Redis Cloud endpoint (e.g., redis-11429.c270.us-east-1-3.ec2.cloud.redislabs.com)
+# - port: your Redis Cloud port (e.g., 11429)
+
+# Option C: Redis with SSL/TLS
+# REDIS_URL=rediss://username:password@host:port
+
+# ============================================
+# Email Configuration
+# ============================================
+# Email service for password reset, notifications, and bulk emails
+# Set EMAIL_ENABLED=true to enable email sending
+
+# Enable/disable email service
+EMAIL_ENABLED=false
+
+# Option A: SMTP (Gmail, SendGrid, etc.)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password-or-smtp-password
+EMAIL_FROM=noreply@eventsphere.com
+EMAIL_FROM_NAME=EventSphere
+
+# Option B: SendGrid API (Production Recommended)
+# EMAIL_SERVICE=sendgrid
+# EMAIL_API_KEY=SG.your-sendgrid-api-key
+
+# Option C: AWS SES
+# EMAIL_SERVICE=ses
+# AWS_REGION=us-east-1
+# AWS_ACCESS_KEY_ID=your-access-key
+# AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Option D: Development Testing (Ethereal Email)
+# Generate credentials: node -e "require('nodemailer').createTestAccount((err, account) => { if (!err) console.log('USER:', account.user, '\nPASS:', account.pass); });"
+# EMAIL_HOST=smtp.ethereal.email
+# EMAIL_PORT=587
+# EMAIL_USER=ethereal-username
+# EMAIL_PASSWORD=ethereal-password
+
+# ============================================
+# File Upload Configuration
+# ============================================
+# Maximum file size in bytes (default: 10MB = 10485760)
+MAX_FILE_SIZE=10485760
+
+# Upload directory path (relative to backend root)
+UPLOAD_DIR=./uploads
+
+# Allowed file types (comma-separated MIME types, optional)
+# ALLOWED_FILE_TYPES=image/jpeg,image/png,image/gif,application/pdf
+
+# ============================================
+# Logging Configuration
+# ============================================
+# Log level: error, warn, info, http, debug
+LOG_LEVEL=info
+
+# Log file directory (optional, defaults to ./logs)
+# LOG_DIR=./logs
+
+# ============================================
+# Error Tracking (Optional)
+# ============================================
+# Sentry DSN for error tracking and monitoring
+# SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+
+# ============================================
+# Monitoring & Metrics (Optional)
+# ============================================
+# Prometheus metrics endpoint is available at /metrics
+# No additional configuration needed unless using external scraping
+
+# ============================================
+# Rate Limiting (Optional Overrides)
+# ============================================
+# API Rate limit - requests per window (default: 100 per 15 minutes)
+# RATE_LIMIT_WINDOW_MS=900000
+# RATE_LIMIT_MAX=100
+
+# Auth Rate limit - requests per window (default: 5 per 15 minutes)
+# AUTH_RATE_LIMIT_WINDOW_MS=900000
+# AUTH_RATE_LIMIT_MAX=5
+
+# ============================================
+# Feature Flags (Optional)
+# ============================================
+# Enable/disable features
+# ENABLE_REGISTRATION=true
+# ENABLE_PASSWORD_RESET=true
+# ENABLE_EMAIL_VERIFICATION=false
+
+# ============================================
+# Development Only
+# ============================================
+# Skip authentication for testing (DO NOT USE IN PRODUCTION!)
+# SKIP_AUTH=false
+
+# Seed database on startup (DO NOT USE IN PRODUCTION!)
+# SEED_ON_STARTUP=false
+

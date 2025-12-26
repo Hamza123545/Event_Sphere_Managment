@@ -89,3 +89,36 @@ export async function getUnreadCount(role: 'exhibitor' | 'attendee' = 'exhibitor
   return response.data.data.count;
 }
 
+/**
+ * Get messages for a specific conversation (between current user and another user)
+ * This filters messages where either the current user is sender and otherUser is recipient,
+ * or current user is recipient and otherUser is sender
+ */
+export async function getConversationMessages(
+  otherUserId: string,
+  role: 'exhibitor' | 'attendee' = 'exhibitor',
+  options?: {
+    limit?: number;
+    beforeTimestamp?: string; // Load messages before this timestamp (for pagination)
+  }
+): Promise<{ messages: Message[]; hasMore: boolean }> {
+  const endpoint = role === 'exhibitor' ? '/exhibitor/messages' : '/attendee/messages';
+  const limit = options?.limit || 15;
+  
+  const params = new URLSearchParams();
+  params.append('limit', limit.toString());
+  params.append('conversationWith', otherUserId);
+  if (options?.beforeTimestamp) {
+    params.append('beforeTimestamp', options.beforeTimestamp);
+  }
+
+  const response = await api.get<GetMessagesResponse>(`${endpoint}?${params.toString()}`);
+  const messages = response.data.data.messages;
+  
+  // Determine if there are more messages (if we got the full limit, there might be more)
+  // Also check pagination info if available
+  const hasMore = messages.length === limit;
+  
+  return { messages, hasMore };
+}
+

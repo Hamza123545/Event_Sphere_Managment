@@ -135,6 +135,12 @@ export interface RegisterForExpoRequest {
 
 export interface ExpoListResponse {
   expos: ExpoSummary[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 export interface SessionListResponse {

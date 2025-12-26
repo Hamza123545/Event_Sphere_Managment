@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
@@ -17,10 +16,15 @@ import {
   Box,
   Chip,
   IconButton,
+  Typography,
 } from '@mui/material';
 import { Add, Delete, CloudUpload } from '@mui/icons-material';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import type { UpdateProfileRequest, ExhibitorProfile } from '../../types/exhibitor';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface EditProfileFormProps {
   open: boolean;
@@ -154,29 +158,74 @@ export default function EditProfileForm({
       });
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch {
       // Error handled by store
     }
   };
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Edit Profile
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
           {profile.registrationStatus === 'approved' && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.warning}20`,
+                border: `1px solid ${activeTheme.warning}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               This profile is approved. Some changes may require organizer approval.
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -186,6 +235,7 @@ export default function EditProfileForm({
                 error={!!errors.companyName}
                 helperText={errors.companyName}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -200,29 +250,35 @@ export default function EditProfileForm({
                 error={!!errors.description}
                 helperText={errors.description}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
                 Products/Services
               </Typography>
               {(formData.productsServices || []).map((product, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 2 }}>
                   <TextField
                     fullWidth
                     value={product}
                     onChange={(e) => handleProductsServicesChange(index, e.target.value)}
                     disabled={isLoading}
+                    sx={textFieldSx}
                   />
-                  <IconButton onClick={() => removeProductService(index)} disabled={isLoading} color="error">
+                  <IconButton 
+                    onClick={() => removeProductService(index)} 
+                    disabled={isLoading}
+                    sx={{ color: activeTheme.error }}
+                  >
                     <Delete />
                   </IconButton>
                 </Box>
               ))}
-              <Button startIcon={<Add />} onClick={addProductService} disabled={isLoading} size="small">
+              <ActionButton startIcon={<Add />} onClick={addProductService} disabled={isLoading} size="small">
                 Add Product/Service
-              </Button>
+              </ActionButton>
             </Grid>
 
             <Grid item xs={12} sm={6}>
@@ -232,6 +288,7 @@ export default function EditProfileForm({
                 value={formData.category || ''}
                 onChange={handleChange('category')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -245,6 +302,7 @@ export default function EditProfileForm({
                 error={!!errors.contactEmail}
                 helperText={errors.contactEmail}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -255,6 +313,7 @@ export default function EditProfileForm({
                 value={formData.contactPhone || ''}
                 onChange={handleChange('contactPhone')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -265,6 +324,7 @@ export default function EditProfileForm({
                 value={formData.website || ''}
                 onChange={handleChange('website')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -278,9 +338,9 @@ export default function EditProfileForm({
                 disabled={isLoading}
               />
               <label htmlFor="logo-upload-edit">
-                <Button variant="outlined" component="span" startIcon={<CloudUpload />} disabled={isLoading}>
+                <ActionButton component="span" startIcon={<CloudUpload />} disabled={isLoading}>
                   {logoFile ? `New Logo: ${logoFile.name}` : 'Update Logo (Optional, Max 5MB)'}
-                </Button>
+                </ActionButton>
               </label>
             </Grid>
 
@@ -295,27 +355,39 @@ export default function EditProfileForm({
                 disabled={isLoading}
               />
               <label htmlFor="documents-upload-edit">
-                <Button variant="outlined" component="span" startIcon={<CloudUpload />} disabled={isLoading}>
+                <ActionButton component="span" startIcon={<CloudUpload />} disabled={isLoading}>
                   Add Documents (Optional)
-                </Button>
+                </ActionButton>
               </label>
               {documentFiles.length > 0 && (
-                <Box sx={{ mt: 1 }}>
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {documentFiles.map((file, index) => (
-                    <Chip key={index} label={file.name} onDelete={() => removeDocument(index)} sx={{ mr: 1, mb: 1 }} />
+                    <Chip 
+                      key={index} 
+                      label={file.name} 
+                      onDelete={() => removeDocument(index)}
+                      sx={{
+                        mr: 1,
+                        mb: 1,
+                        bgcolor: `${activeTheme.accent}20`,
+                        color: activeTheme.accent,
+                        border: `1px solid ${activeTheme.accent}30`,
+                        fontWeight: 600
+                      }}
+                    />
                   ))}
                 </Box>
               )}
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={onClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Save Changes'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

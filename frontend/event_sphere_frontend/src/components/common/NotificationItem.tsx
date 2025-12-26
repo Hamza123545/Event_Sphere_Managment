@@ -15,6 +15,9 @@ import {
   FiberManualRecord,
 } from '@mui/icons-material';
 import type { NotificationItem as NotificationItemType } from '../../types/notifications';
+import {
+  activeTheme,
+} from '../../theme/designSystem';
 // Helper to format time ago
 const formatTimeAgo = (date: Date): string => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -101,56 +104,60 @@ export default function NotificationItem({ notification, onClick }: Notification
   const getColor = () => {
     switch (notif.type) {
       case 'session-reminder':
-        return 'primary';
+        return activeTheme.accent;
       case 'schedule-changed':
-        return 'warning';
+        return activeTheme.warning;
       case 'expo-updated':
         if (notif.updateType === 'cancelled') {
-          return 'error';
+          return activeTheme.error;
         }
-        return 'info';
+        return activeTheme.info;
       case 'exhibitor-approved':
-        return 'success';
+        return activeTheme.success;
       case 'exhibitor-rejected':
-        return 'warning';
+        return activeTheme.warning;
       default:
-        return 'default';
+        return activeTheme.textSecondary;
     }
   };
+
+  const colorValue = getColor();
 
   return (
     <ListItem
       button
       onClick={onClick}
       sx={{
-        bgcolor: read ? 'transparent' : 'action.hover',
+        bgcolor: read ? 'transparent' : activeTheme.surfaceLight,
         borderLeft: !read ? `3px solid` : 'none',
-        borderLeftColor: !read ? `${getColor()}.main` : 'transparent',
+        borderLeftColor: !read ? colorValue : 'transparent',
         '&:hover': {
-          bgcolor: 'action.selected',
+          bgcolor: activeTheme.surface,
         },
       }}
     >
       <ListItemIcon sx={{ minWidth: 40 }}>
-        {getIcon()}
+        <Box sx={{ color: colorValue }}>
+          {getIcon()}
+        </Box>
       </ListItemIcon>
       <ListItemText
         primary={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: read ? 'normal' : 'bold' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: read ? 600 : 800, color: activeTheme.textPrimary }}>
               {getTitle()}
             </Typography>
             {!read && (
-              <FiberManualRecord sx={{ fontSize: 8, color: `${getColor()}.main` }} />
+              <FiberManualRecord sx={{ fontSize: 8, color: colorValue }} />
             )}
           </Box>
         }
         secondary={
           <Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
               {getMessage()}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+            <Typography variant="caption" sx={{ mt: 0.5, display: 'block', color: activeTheme.textSecondary, fontWeight: 600 }}>
               {formatTimeAgo(createdAt)}
             </Typography>
           </Box>

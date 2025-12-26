@@ -128,8 +128,8 @@ export async function submitFeedback(
 }
 
 /**
- * Get feedback queue (for organizers/admins)
- * Implements T211, T215
+ * Get feedback queue (for organizers/admins) with pagination
+ * Implements T211, T215, T237
  */
 export async function getFeedbackQueue(
   userId: string,
@@ -138,13 +138,27 @@ export async function getFeedbackQueue(
     status?: 'pending' | 'reviewed' | 'resolved' | 'closed';
     category?: 'suggestion' | 'bug-report' | 'support-request';
     assignedTo?: string;
+    page?: number;
+    limit?: number;
   }
-): Promise<FeedbackDetail[]> {
+): Promise<{
+  feedbacks: FeedbackDetail[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
   try {
     // RBAC: Only admins and organizers can view feedback queue
     if (userRole !== 'admin' && userRole !== 'organizer') {
       throw new CustomError('Only admins and organizers can view feedback queue', 403, 'FORBIDDEN');
     }
+
+    const page = filters?.page || 1;
+    const limit = Math.min(filters?.limit || 20, 100); // Max 100 items per page, default 20
+    const skip = (page - 1) * limit;
 
     const query: any = {};
     if (filters?.status) {
@@ -157,10 +171,17 @@ export async function getFeedbackQueue(
       query.assignedTo = filters.assignedTo;
     }
 
+    // Get total count for pagination
+    const totalItems = await FeedbackSubmission.countDocuments(query);
+
     const feedbacks = await FeedbackSubmission.find(query)
       .populate('submitter', 'email profile.firstName profile.lastName')
       .populate('assignedTo', 'email profile.firstName profile.lastName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(totalItems / limit);
 
     // Audit logging (T215)
     logger.info('Feedback queue accessed', {
@@ -171,7 +192,15 @@ export async function getFeedbackQueue(
       timestamp: new Date().toISOString(),
     });
 
-    return feedbacks.map(formatFeedbackDetail);
+    return {
+      feedbacks: feedbacks.map(formatFeedbackDetail),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;
@@ -196,6 +225,39 @@ export async function getUserFeedback(userId: string): Promise<FeedbackDetail[]>
   } catch (error) {
     logger.error('Error in getUserFeedback service:', error);
     throw new CustomError('Failed to get user feedback', 500, 'GET_USER_FEEDBACK_ERROR');
+  }
+}
+
+/**
+ * Get feedback by ID
+ * Implements T211
+ */
+export async function getFeedbackById(
+  feedbackId: string,
+  userId: string,
+  userRole: string
+): Promise<FeedbackDetail> {
+  try {
+    const feedback = await FeedbackSubmission.findById(feedbackId)
+      .populate('submitter', 'email profile.firstName profile.lastName')
+      .populate('assignedTo', 'email profile.firstName profile.lastName');
+
+    if (!feedback) {
+      throw new CustomError('Feedback not found', 404, 'FEEDBACK_NOT_FOUND');
+    }
+
+    // RBAC: Users can only see their own feedback, admins/organizers can see all
+    if (userRole !== 'admin' && userRole !== 'organizer' && feedback.submitter.toString() !== userId) {
+      throw new CustomError('Access denied to this feedback', 403, 'FORBIDDEN');
+    }
+
+    return formatFeedbackDetail(feedback);
+  } catch (error) {
+    if (error instanceof CustomError) {
+      throw error;
+    }
+    logger.error('Error in getFeedbackById service:', error);
+    throw new CustomError('Failed to get feedback', 500, 'GET_FEEDBACK_ERROR');
   }
 }
 

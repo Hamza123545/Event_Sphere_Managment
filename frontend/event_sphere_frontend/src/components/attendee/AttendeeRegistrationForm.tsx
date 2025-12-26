@@ -9,19 +9,21 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
   CircularProgress,
   Box,
-  Chip,
   IconButton,
   Typography,
 } from '@mui/material';
 import { Add, Delete } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAttendeeStore } from '../../stores/attendeeStore';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface AttendeeRegistrationFormProps {
   open: boolean;
@@ -106,12 +108,33 @@ export default function AttendeeRegistrationForm({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Register for {expoTitle}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Register for {expoTitle}
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 2,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
@@ -119,7 +142,7 @@ export default function AttendeeRegistrationForm({
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {/* Interests */}
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>
+              <Typography variant="subtitle2" gutterBottom sx={{ color: activeTheme.textPrimary, fontWeight: 700 }}>
                 Interests (Optional)
               </Typography>
               {interests.map((interest, index) => (
@@ -130,22 +153,38 @@ export default function AttendeeRegistrationForm({
                     value={interest}
                     onChange={(e) => handleInterestChange(index, e.target.value)}
                     disabled={isLoading}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: activeTheme.surfaceLight,
+                        color: activeTheme.textPrimary,
+                        '& fieldset': {
+                          borderColor: activeTheme.border,
+                        },
+                        '&:hover fieldset': {
+                          borderColor: activeTheme.accent,
+                        },
+                      },
+                    }}
                   />
                   {interests.length > 1 && (
-                    <IconButton onClick={() => removeInterest(index)} disabled={isLoading} color="error">
+                    <IconButton 
+                      onClick={() => removeInterest(index)} 
+                      disabled={isLoading}
+                      sx={{ color: activeTheme.error }}
+                    >
                       <Delete />
                     </IconButton>
                   )}
                 </Box>
               ))}
-              <Button startIcon={<Add />} onClick={addInterest} disabled={isLoading} size="small">
+              <ActionButton startIcon={<Add />} onClick={addInterest} disabled={isLoading} size="small">
                 Add Interest
-              </Button>
+              </ActionButton>
             </Grid>
 
             {/* Dietary Restrictions */}
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>
+              <Typography variant="subtitle2" gutterBottom sx={{ color: activeTheme.textPrimary, fontWeight: 700 }}>
                 Dietary Restrictions (Optional)
               </Typography>
               {dietaryRestrictions.map((restriction, index) => (
@@ -156,27 +195,43 @@ export default function AttendeeRegistrationForm({
                     value={restriction}
                     onChange={(e) => handleDietaryChange(index, e.target.value)}
                     disabled={isLoading}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: activeTheme.surfaceLight,
+                        color: activeTheme.textPrimary,
+                        '& fieldset': {
+                          borderColor: activeTheme.border,
+                        },
+                        '&:hover fieldset': {
+                          borderColor: activeTheme.accent,
+                        },
+                      },
+                    }}
                   />
                   {dietaryRestrictions.length > 1 && (
-                    <IconButton onClick={() => removeDietary(index)} disabled={isLoading} color="error">
+                    <IconButton 
+                      onClick={() => removeDietary(index)} 
+                      disabled={isLoading}
+                      sx={{ color: activeTheme.error }}
+                    >
                       <Delete />
                     </IconButton>
                   )}
                 </Box>
               ))}
-              <Button startIcon={<Add />} onClick={addDietary} disabled={isLoading} size="small">
+              <ActionButton startIcon={<Add />} onClick={addDietary} disabled={isLoading} size="small">
                 Add Dietary Restriction
-              </Button>
+              </ActionButton>
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={handleClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Register'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

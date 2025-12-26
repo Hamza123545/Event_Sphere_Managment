@@ -4,7 +4,7 @@
  * Implements T190
  */
 
-import { Paper, Typography, Box, Grid } from '@mui/material';
+import { Typography, Box, Grid } from '@mui/material';
 import {
   PieChart,
   Pie,
@@ -14,12 +14,16 @@ import {
   Tooltip,
 } from 'recharts';
 import type { AttendeeCountMetrics } from '../../types/analytics';
+import {
+  GlassCard,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface AttendeeCountWidgetProps {
   data: AttendeeCountMetrics;
 }
 
-const COLORS = ['#1976d2', '#2e7d32', '#ed6c02', '#d32f2f'];
+const COLORS = [activeTheme.accent, activeTheme.success, activeTheme.warning, activeTheme.error];
 
 export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) {
   const chartData = [
@@ -37,21 +41,20 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
       return (
         <Box
           sx={{
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 1,
+            bgcolor: activeTheme.surface,
+            border: `1px solid ${activeTheme.border}`,
+            borderRadius: 2,
+            p: 2,
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="body2" sx={{ fontWeight: 800, color: activeTheme.textPrimary }}>
             {data.name}
           </Typography>
-          <Typography variant="body2" color="primary">
+          <Typography variant="body2" sx={{ color: activeTheme.accent, fontWeight: 700 }}>
             {data.value} attendees
           </Typography>
           {percentage && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
               {percentage}
             </Typography>
           )}
@@ -68,14 +71,14 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
   };
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
+    <GlassCard>
+      <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
         Attendee Status
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Box sx={{ width: '100%', height: 300, mt: 2 }}>
-            <ResponsiveContainer>
+          <Box sx={{ width: '100%', height: 300, mt: 2, minHeight: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
@@ -84,7 +87,7 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
                   labelLine={false}
                   label={renderCustomLabel}
                   outerRadius={100}
-                  fill="#8884d8"
+                  fill={activeTheme.accent}
                   dataKey="value"
                 >
                   {chartData.map((entry, index) => (
@@ -98,37 +101,37 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
           </Box>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: activeTheme.accent }}>
                 {data.total}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                 Total Attendees
               </Typography>
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 'medium', color: COLORS[0] }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS[0] }}>
                 {data.registered}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                 Registered
               </Typography>
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 'medium', color: COLORS[1] }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS[1] }}>
                 {data.checkedIn}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                 Checked In
               </Typography>
             </Box>
             {data.noShow > 0 && (
               <Box>
-                <Typography variant="h5" sx={{ fontWeight: 'medium', color: COLORS[2] }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS[2] }}>
                   {data.noShow}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                   No Shows
                 </Typography>
               </Box>
@@ -136,7 +139,7 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
           </Box>
         </Grid>
       </Grid>
-    </Paper>
+    </GlassCard>
   );
 }
 

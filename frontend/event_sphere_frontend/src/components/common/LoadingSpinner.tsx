@@ -1,4 +1,5 @@
 import { CircularProgress, Box } from '@mui/material';
+import { activeTheme } from '../../theme/designSystem';
 
 interface LoadingSpinnerProps {
   size?: number;
@@ -10,7 +11,14 @@ interface LoadingSpinnerProps {
  * Reusable loading indicator
  */
 export function LoadingSpinner({ size = 40, fullScreen = false }: LoadingSpinnerProps) {
-  const spinner = <CircularProgress size={size} />;
+  const spinner = (
+    <CircularProgress 
+      size={size} 
+      sx={{ 
+        color: activeTheme.accent,
+      }} 
+    />
+  );
 
   if (fullScreen) {
     return (
@@ -19,6 +27,7 @@ export function LoadingSpinner({ size = 40, fullScreen = false }: LoadingSpinner
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
+        sx={{ bgcolor: activeTheme.bg }}
       >
         {spinner}
       </Box>

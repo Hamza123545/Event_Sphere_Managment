@@ -3,6 +3,7 @@ import { User } from '../models/User';
 import { AppError as CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 import { broadcastToExpo } from './realtime';
+import cacheService, { CacheKeys } from './cacheService';
 
 export interface CreateExpoInput {
   title: string;
@@ -20,6 +21,7 @@ export interface CreateExpoInput {
     country: string;
     zipCode?: string;
   };
+  imageUrl?: string;
 }
 
 export interface UpdateExpoInput {
@@ -39,6 +41,7 @@ export interface UpdateExpoInput {
     zipCode?: string;
   };
   status?: 'draft' | 'upcoming' | 'active' | 'cancelled';
+  imageUrl?: string;
 }
 
 export interface ExpoDetail {
@@ -63,6 +66,7 @@ export interface ExpoDetail {
     name: string;
   };
   status: 'draft' | 'upcoming' | 'active' | 'completed' | 'cancelled';
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -80,6 +84,7 @@ export interface ExpoSummary {
     city: string;
     country: string;
   };
+  imageUrl?: string;
 }
 
 /**
@@ -116,6 +121,7 @@ export async function createExpo(userId: string, input: CreateExpoInput): Promis
       location: input.location,
       organizer: userId,
       status: 'draft', // Initial status is draft
+      imageUrl: input.imageUrl,
     });
 
     await expo.save();
@@ -155,7 +161,17 @@ export async function getExpoById(expoId: string, userId: string, userRole: stri
 
     // RBAC: Only organizer who created expo or admin can view/edit
     // For now, we'll allow viewing. In future, we might want to allow exhibitors/attendees to view public expos
-    if (userRole !== 'admin' && expo.organizer.toString() !== userId) {
+    // Handle both populated (User document) and unpopulated (ObjectId) organizer
+    let organizerId: string;
+    if (expo.organizer && typeof expo.organizer === 'object' && '_id' in expo.organizer) {
+      // Organizer is populated (User document)
+      organizerId = (expo.organizer as any)._id.toString();
+    } else {
+      // Organizer is not populated (ObjectId)
+      organizerId = expo.organizer?.toString ? expo.organizer.toString() : String(expo.organizer);
+    }
+    if (userRole !== 'admin' && organizerId !== userId) {
+      logger.warn('Access denied to expo', { userId, organizerId, userRole, expoId });
       throw new CustomError('Access denied to this expo', 403, 'FORBIDDEN');
     }
 
@@ -186,6 +202,16 @@ export async function listOrganizerExpos(
     const limit = Math.min(options.limit || 20, 100); // Max 100 items per page
     const skip = (page - 1) * limit;
 
+    // Try to get from cache (T238) - only for first page without status filter
+    if (page === 1 && !options.status) {
+      const cacheKey = CacheKeys.expoList(userId);
+      const cached = await cacheService.get<{ expos: ExpoSummary[]; pagination: any }>(cacheKey);
+      if (cached) {
+        logger.debug('Returning cached expo list', { userId, cacheKey });
+        return cached;
+      }
+    }
+
     // Build query
     const query: any = { organizer: userId };
     if (options.status) {
@@ -214,13 +240,14 @@ export async function listOrganizerExpos(
         city: expo.location.city,
         country: expo.location.country,
       },
+      imageUrl: expo.imageUrl,
     }));
 
     const totalPages = Math.ceil(totalItems / limit);
 
     logger.info('Listed expos for organizer', { organizerId: userId, count: expoSummaries.length });
 
-    return {
+    const result = {
       expos: expoSummaries,
       pagination: {
         currentPage: page,
@@ -229,6 +256,14 @@ export async function listOrganizerExpos(
         itemsPerPage: limit,
       },
     };
+
+    // Cache result for first page without status filter (T238)
+    if (page === 1 && !options.status) {
+      const cacheKey = CacheKeys.expoList(userId);
+      await cacheService.set(cacheKey, result);
+    }
+
+    return result;
   } catch (error) {
     logger.error('Error in listOrganizerExpos service:', error);
     throw new CustomError('Failed to list expos', 500, 'LIST_EXPOS_ERROR');
@@ -338,6 +373,9 @@ export async function updateExpo(
     if (updates.status) {
       // Completed status cannot be set manually (auto-transitioned) - prevented by type system
       expo.status = updates.status;
+    }
+    if (updates.imageUrl !== undefined) {
+      expo.imageUrl = updates.imageUrl || undefined; // Convert null to undefined to remove field
     }
 
     await expo.save();
@@ -462,6 +500,7 @@ function formatExpoDetail(expo: IExpoEvent & { organizer?: any }): ExpoDetail {
       name: organizerName,
     },
     status: expo.status,
+    imageUrl: expo.imageUrl,
     createdAt: expo.createdAt,
     updatedAt: expo.updatedAt,
   };

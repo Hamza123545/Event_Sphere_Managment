@@ -10,18 +10,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   CircularProgress,
+  Typography,
 } from '@mui/material';
 import type { CreateExpoRequest } from '../../types/expo';
-
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
+import ImageUpload from '../common/ImageUpload';
 interface CreateExpoFormProps {
   open: boolean;
   onClose: () => void;
@@ -43,9 +43,9 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
       city: '',
       country: '',
     },
-    status: 'draft',
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,8 +67,8 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
           city: '',
           country: '',
         },
-        status: 'draft',
       });
+      setImageFile(null);
       setErrors({});
       setError(null);
     }
@@ -141,7 +141,11 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
 
     setIsLoading(true);
     try {
-      await onSubmit(formData);
+      const submitData: CreateExpoRequest = {
+        ...formData,
+        ...(imageFile && { imageFile }),
+      };
+      await onSubmit(submitData);
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create expo');
@@ -151,7 +155,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
   };
 
   const handleChange = (field: string) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: any } }
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: string } }
   ) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -185,18 +189,55 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
     }
   };
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Create New Expo Event</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Create New Expo Event
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             {/* Title */}
             <Grid item xs={12}>
               <TextField
@@ -209,6 +250,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 helperText={errors.title}
                 disabled={isLoading}
                 inputProps={{ minLength: 5, maxLength: 200 }}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -226,11 +268,12 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 helperText={errors.description || 'Minimum 20 characters'}
                 disabled={isLoading}
                 inputProps={{ minLength: 20, maxLength: 5000 }}
+                sx={textFieldSx}
               />
             </Grid>
 
             {/* Theme */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Theme (Optional)"
@@ -239,30 +282,8 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 error={!!errors.theme}
                 helperText={errors.theme}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
-            </Grid>
-
-            {/* Status */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.status}
-                  label="Status"
-                  onChange={(e) =>
-                    handleChange('status')({
-                      target: { value: e.target.value },
-                    } as any)
-                  }
-                  disabled={isLoading}
-                >
-                  <MenuItem value="draft">Draft</MenuItem>
-                  <MenuItem value="upcoming">Upcoming</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
             </Grid>
 
             {/* Start Date */}
@@ -278,6 +299,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 helperText={errors.startDate}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -294,6 +316,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 helperText={errors.endDate}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -305,6 +328,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 value={formData.location.venueName || ''}
                 onChange={handleChange('location.venueName')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -316,6 +340,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 value={formData.location.address || ''}
                 onChange={handleChange('location.address')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -330,6 +355,7 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 error={!!errors.city}
                 helperText={errors.city}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -344,17 +370,35 @@ export default function CreateExpoForm({ open, onClose, onSubmit }: CreateExpoFo
                 error={!!errors.country}
                 helperText={errors.country}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
+            </Grid>
+
+            {/* Expo Image Upload */}
+            <Grid item xs={12}>
+              <Typography variant="body2" sx={{ mb: 1, color: activeTheme.textSecondary, fontWeight: 600 }}>
+                Promotional Image (Optional)
+              </Typography>
+              <ImageUpload
+                value={imageFile}
+                onChange={setImageFile}
+                disabled={isLoading}
+                maxSizeMB={10}
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              />
+              <Typography variant="caption" sx={{ mt: 1, display: 'block', color: activeTheme.textSecondary }}>
+                Upload a promotional image or pamphlet for this expo. This will be visible to attendees and exhibitors.
+              </Typography>
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={onClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Create Expo'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

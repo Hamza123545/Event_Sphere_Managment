@@ -25,6 +25,13 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
 import { useAttendeeStore } from '../../stores/attendeeStore';
 import type { SessionDetail } from '../../types/attendee';
+import { getSocket } from '../../services/socket';
+import {
+  GlassContainer,
+  GlassCard,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface ScheduleViewProps {
   expoId: string;
@@ -65,7 +72,7 @@ export default function ScheduleView({ expoId }: ScheduleViewProps) {
 
   // Listen for real-time schedule updates (T140)
   useEffect(() => {
-    const socket = require('../../services/socket').getSocket();
+    const socket = getSocket();
     if (!socket) return;
 
     const handleScheduleChanged = (event: any) => {
@@ -185,54 +192,125 @@ export default function ScheduleView({ expoId }: ScheduleViewProps) {
         <Alert
           onClose={() => setNotification(null)}
           severity={notification?.type || 'info'}
-          sx={{ width: '100%' }}
+          sx={{ 
+            width: '100%',
+            bgcolor: notification?.type === 'warning' ? `${activeTheme.warning}20` : `${activeTheme.info}20`,
+            border: `1px solid ${notification?.type === 'warning' ? activeTheme.warning : activeTheme.info}30`,
+            color: activeTheme.textPrimary
+          }}
         >
           {notification?.message}
         </Alert>
       </Snackbar>
 
       {/* Filters */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          placeholder="Search sessions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-          sx={{ flexGrow: 1, minWidth: 200 }}
-        />
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Category</InputLabel>
-          <Select value={categoryFilter} label="Category" onChange={(e) => setCategoryFilter(e.target.value)}>
-            <MenuItem value="">All Categories</MenuItem>
-            {categories.map((cat) => (
-              <MenuItem key={cat} value={cat}>
-                {cat}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Topic</InputLabel>
-          <Select value={topicFilter} label="Topic" onChange={(e) => setTopicFilter(e.target.value)}>
-            <MenuItem value="">All Topics</MenuItem>
-            {topics.map((topic) => (
-              <MenuItem key={topic} value={topic}>
-                {topic}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      <GlassContainer sx={{ p: 3, mb: 4 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            placeholder="Search sessions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ mr: 1, color: activeTheme.textSecondary }} />,
+            }}
+            sx={{ 
+              flexGrow: 1, 
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& fieldset': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: activeTheme.accent,
+                },
+              },
+            }}
+          />
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ color: activeTheme.textSecondary }}>Category</InputLabel>
+            <Select 
+              value={categoryFilter} 
+              label="Category" 
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              sx={{
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.accent,
+                },
+              }}
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ color: activeTheme.textSecondary }}>Topic</InputLabel>
+            <Select 
+              value={topicFilter} 
+              label="Topic" 
+              onChange={(e) => setTopicFilter(e.target.value)}
+              sx={{
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.accent,
+                },
+              }}
+            >
+              <MenuItem value="">All Topics</MenuItem>
+              {topics.map((topic) => (
+                <MenuItem key={topic} value={topic}>
+                  {topic}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </GlassContainer>
 
       {filteredSessions.length === 0 ? (
-        <Alert severity="info">No sessions found matching your criteria.</Alert>
+        <GlassCard>
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography sx={{ color: activeTheme.textSecondary }}>
+              No sessions found matching your criteria.
+            </Typography>
+          </Box>
+        </GlassCard>
       ) : (
         <Box>
           {/* Date Tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+          <GlassContainer sx={{ mb: 4 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange} 
+              variant="scrollable" 
+              scrollButtons="auto"
+              sx={{
+                '& .MuiTab-root': {
+                  color: activeTheme.textSecondary,
+                  fontWeight: 600,
+                  '&.Mui-selected': {
+                    color: activeTheme.accent,
+                  },
+                },
+                '& .MuiTabs-indicator': {
+                  bgcolor: activeTheme.accent,
+                },
+              }}
+            >
               <Tab label="All Dates" />
               {dates.map((date) => (
                 <Tab
@@ -244,30 +322,42 @@ export default function ScheduleView({ expoId }: ScheduleViewProps) {
                 />
               ))}
             </Tabs>
-          </Box>
+          </GlassContainer>
 
           {/* All Dates View */}
           <TabPanel value={tabValue} index={0}>
-            {dates.map((date) => (
-              <Box key={date} sx={{ mb: 4 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  {new Date(date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </Typography>
+            {dates.map((date, dateIndex) => (
+              <Box key={date} sx={{ mb: 6 }}>
+                <MotionBox
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: dateIndex * 0.1 }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
+                    {new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Typography>
+                </MotionBox>
                 <Grid container spacing={3}>
-                  {sessionsByDate[date].map((session) => (
+                  {sessionsByDate[date].map((session, sessionIndex) => (
                     <Grid item xs={12} sm={6} md={4} key={session.sessionId}>
-                      <SessionCard
-                        session={session}
-                        onBookmark={() => handleBookmark(session)}
-                        onRemoveBookmark={() => handleRemoveBookmark(session)}
-                        isLoading={isLoading}
-                        highlighted={highlightedSessionId === session.sessionId}
-                      />
+                      <MotionBox
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: (dateIndex * 0.1) + (sessionIndex * 0.05) }}
+                      >
+                        <SessionCard
+                          session={session}
+                          onBookmark={() => handleBookmark(session)}
+                          onRemoveBookmark={() => handleRemoveBookmark(session)}
+                          isLoading={isLoading}
+                          highlighted={highlightedSessionId === session.sessionId}
+                        />
+                      </MotionBox>
                     </Grid>
                   ))}
                 </Grid>

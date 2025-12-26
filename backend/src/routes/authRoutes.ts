@@ -8,7 +8,7 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 import * as authService from '../services/authService';
 import { AuthRequest, requireAuth } from '../middleware/auth';
-import { validate, validateEmail, validatePassword } from '../middleware/validator';
+import { validate, validateEmail, validatePassword, validateNewPassword } from '../middleware/validator';
 import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLimit';
 
 const router: ExpressRouter = Router();
@@ -191,7 +191,7 @@ router.post(
   '/reset-password',
   validate([
     body('token').notEmpty().withMessage('Reset token is required'),
-    validatePassword,
+    validateNewPassword,
   ]),
   async (req, res, next) => {
     try {

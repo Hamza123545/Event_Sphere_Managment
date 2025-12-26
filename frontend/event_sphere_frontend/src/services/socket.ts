@@ -45,16 +45,18 @@ export function connectSocket(token: string): Socket {
     console.log('Socket connected:', currentSocket?.id);
     reconnectAttempts = 0;
     
-    // Rejoin all previously joined rooms (T143)
-    if (currentSocket) {
-      joinedRooms.forEach((room) => {
-        const [type, id] = room.split('-');
-        if (type === 'expo') {
-          currentSocket.emit('join-expo', id);
-        } else if (type === 'exhibitor') {
-          currentSocket.emit('join-exhibitor', id);
-        }
-      });
+      // Rejoin all previously joined rooms (T143)
+      if (currentSocket) {
+        joinedRooms.forEach((room) => {
+          const [type, id] = room.split('-');
+          if (type === 'expo') {
+            currentSocket.emit('join-expo', id);
+          } else if (type === 'exhibitor') {
+            currentSocket.emit('join-exhibitor', id);
+          } else if (type === 'user') {
+            currentSocket.emit('join-user', id);
+          }
+        });
       
       // Process queued events (T144)
       while (eventQueue.length > 0) {
@@ -102,6 +104,8 @@ export function connectSocket(token: string): Socket {
           currentSocket.emit('join-expo', id);
         } else if (type === 'exhibitor') {
           currentSocket.emit('join-exhibitor', id);
+        } else if (type === 'user') {
+          currentSocket.emit('join-user', id);
         }
       });
       
@@ -291,6 +295,24 @@ export function subscribeToExpoUpdates(expoId: string, callbacks: ExpoUpdateCall
   if (callbacks.onBoothReleased) {
     socket.on('booth-released', callbacks.onBoothReleased);
   }
+}
+
+/**
+ * Unsubscribe from expo updates and leave expo room
+ * @param expoId Expo ID
+ */
+export function unsubscribeFromExpoUpdates(expoId: string): void {
+  if (!socket) return;
+
+  // Leave the expo room
+  leaveExpoRoom(expoId);
+
+  // Remove all expo-related event listeners
+  socket.off('schedule-changed');
+  socket.off('session-deleted');
+  socket.off('expo-updated');
+  socket.off('booth-allocated');
+  socket.off('booth-released');
 }
 
 export default socket;

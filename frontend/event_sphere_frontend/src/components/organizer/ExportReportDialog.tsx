@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -22,6 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 import { Download, PictureAsPdf, TableChart, DataObject } from '@mui/icons-material';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface ExportReportDialogProps {
   open: boolean;
@@ -46,8 +49,9 @@ export default function ExportReportDialog({
     try {
       await onExport(format);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to export report');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to export report';
+      setError(errorMessage);
     }
   };
 
@@ -74,23 +78,47 @@ export default function ExportReportDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Export Analytics Report</DialogTitle>
-      <DialogContent dividers>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+        Export Analytics Report
+      </DialogTitle>
+      <DialogContent dividers sx={{ bgcolor: activeTheme.surface }}>
         {expoTitle && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Exporting analytics for: <strong>{expoTitle}</strong>
+          <Typography variant="body2" sx={{ color: activeTheme.textSecondary, mb: 3, fontWeight: 600 }}>
+            Exporting analytics for: <span style={{ color: activeTheme.textPrimary, fontWeight: 700 }}>{expoTitle}</span>
           </Typography>
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3,
+              bgcolor: `${activeTheme.error}20`,
+              border: `1px solid ${activeTheme.error}30`,
+              color: activeTheme.textPrimary
+            }} 
+            onClose={() => setError(null)}
+          >
             {error}
           </Alert>
         )}
 
         <FormControl component="fieldset" fullWidth>
-          <FormLabel component="legend">Select Export Format</FormLabel>
+          <FormLabel component="legend" sx={{ color: activeTheme.textPrimary, fontWeight: 700, mb: 2 }}>
+            Select Export Format
+          </FormLabel>
           <RadioGroup
             value={format}
             onChange={(e) => setFormat(e.target.value as 'pdf' | 'csv' | 'json')}
@@ -99,37 +127,49 @@ export default function ExportReportDialog({
               <FormControlLabel
                 key={fmt}
                 value={fmt}
-                control={<Radio />}
+                control={
+                  <Radio 
+                    sx={{
+                      color: activeTheme.accent,
+                      '&.Mui-checked': {
+                        color: activeTheme.accent,
+                      },
+                    }}
+                  />
+                }
                 label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {getFormatIcon(fmt)}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ color: activeTheme.accent }}>
+                      {getFormatIcon(fmt)}
+                    </Box>
                     <Box>
-                      <Typography variant="body1" sx={{ textTransform: 'uppercase', fontWeight: 'medium' }}>
+                      <Typography variant="body1" sx={{ textTransform: 'uppercase', fontWeight: 800, color: activeTheme.textPrimary }}>
                         {fmt}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                         {getFormatDescription(fmt)}
                       </Typography>
                     </Box>
                   </Box>
                 }
+                sx={{ mb: 2, p: 2, bgcolor: activeTheme.surfaceLight, borderRadius: 2, border: `1px solid ${activeTheme.border}` }}
               />
             ))}
           </RadioGroup>
         </FormControl>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={isLoading}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={onClose} disabled={isLoading}>
           Cancel
-        </Button>
-        <Button
+        </ActionButton>
+        <ActionButton
           onClick={handleExport}
-          variant="contained"
+          primary
           startIcon={isLoading ? <CircularProgress size={16} /> : <Download />}
           disabled={isLoading}
         >
           {isLoading ? 'Exporting...' : 'Download Report'}
-        </Button>
+        </ActionButton>
       </DialogActions>
     </Dialog>
   );

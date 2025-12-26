@@ -171,6 +171,7 @@ export async function addBoothSpace(expoId: string, userId: string, input: AddBo
 
     // Create booth space
     const booth = new BoothSpace({
+      floorPlan: floorPlan._id,
       expo: expoId,
       identifier: input.identifier,
       size: input.size,

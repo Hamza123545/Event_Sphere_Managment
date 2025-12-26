@@ -26,6 +26,7 @@ export interface IExpoEvent extends Document {
   organizer: ObjectId; // Reference to User
   status: 'draft' | 'upcoming' | 'active' | 'completed' | 'cancelled';
   floorPlan?: ObjectId; // Reference to FloorPlan
+  imageUrl?: string; // Promotional/pamphlet image URL
   createdAt: Date;
   updatedAt: Date;
 }
@@ -126,6 +127,13 @@ const ExpoEventSchema = new Schema<IExpoEvent>(
     floorPlan: {
       type: Schema.Types.ObjectId,
       ref: 'FloorPlan',
+    },
+    imageUrl: {
+      type: String,
+      validate: {
+        validator: (v: string) => !v || /^https?:\/\/.+/.test(v),
+        message: 'Image URL must be valid',
+      },
     },
   },
   baseSchemaOptions as any

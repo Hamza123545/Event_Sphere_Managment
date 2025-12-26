@@ -7,26 +7,28 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
   Chip,
-  Alert,
-  CircularProgress,
   Snackbar,
 } from '@mui/material';
 import { Add, Visibility, Business } from '@mui/icons-material';
+import { AnimatePresence } from 'framer-motion';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import { useAuthStore } from '../../stores/authStore';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import type { ExhibitorProfile } from '../../types/exhibitor';
+import {
+  PageContainer,
+  SectionTitle,
+  ActionButton,
+  GlassCard,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -56,12 +58,15 @@ export default function Dashboard() {
         unsubscribeFromApprovalUpdates();
       };
     }
+    return undefined;
   }, [user?.userId, subscribeToApprovalUpdates, unsubscribeFromApprovalUpdates]);
 
   // Show toast notification when approval status changes (T160)
   useEffect(() => {
     if (approvalNotification) {
-      setSnackbarOpen(true);
+      setTimeout(() => {
+        setSnackbarOpen(true);
+      }, 1000);
       // Auto-hide after 10 seconds
       const timer = setTimeout(() => {
         setSnackbarOpen(false);
@@ -70,6 +75,7 @@ export default function Dashboard() {
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [approvalNotification, clearApprovalNotification]);
 
   const handleSnackbarClose = () => {
@@ -77,47 +83,30 @@ export default function Dashboard() {
     clearApprovalNotification();
   };
 
-  const getStatusColor = (
-    status: string
-  ): 'default' | 'primary' | 'success' | 'warning' | 'error' => {
-    switch (status) {
-      case 'approved':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Exhibitor Portal" onBrowseExpos={() => navigate('/exhibitor/browse')} />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" component="h1">
-            My Exhibitor Profiles
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => navigate('/exhibitor/browse')}
-          >
-            Browse & Register
-          </Button>
-        </Box>
+    <PageContainer>
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1 }}>
+        <SectionTitle
+          subtitle={`${profiles.length} ${profiles.length === 1 ? 'registration' : 'registrations'}`}
+          action={
+            <ActionButton
+              primary
+              startIcon={<Add />}
+              onClick={() => navigate('/exhibitor/browse')}
+            >
+              Browse & Register
+            </ActionButton>
+          }
+        >
+          My Exhibitor Profiles
+        </SectionTitle>
 
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         {/* Approval/Rejection Toast Notification (T160) */}
         <Snackbar
@@ -125,12 +114,20 @@ export default function Dashboard() {
           autoHideDuration={10000}
           onClose={handleSnackbarClose}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{
+            '& .MuiSnackbarContent-root': {
+              bgcolor: approvalNotification?.type === 'approved' ? activeTheme.success : activeTheme.error,
+            },
+          }}
         >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={approvalNotification?.type === 'approved' ? 'success' : 'error'}
-            sx={{ width: '100%' }}
-            variant="filled"
+          <Box
+            sx={{
+              bgcolor: approvalNotification?.type === 'approved' ? activeTheme.success : activeTheme.error,
+              color: '#fff',
+              p: 2,
+              borderRadius: 2,
+              minWidth: 300,
+            }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
               {approvalNotification?.type === 'approved' ? 'Application Approved!' : 'Application Rejected'}
@@ -143,104 +140,143 @@ export default function Dashboard() {
                 </Typography>
               </Box>
             )}
-          </Alert>
+          </Box>
         </Snackbar>
 
         {isLoading && profiles.length === 0 ? (
-          <LoadingSpinner fullScreen />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
         ) : profiles.length === 0 ? (
-          <Alert severity="info">
-            You haven't registered for any expos yet. Click "Browse & Register" to get started!
-          </Alert>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h6" sx={{ color: activeTheme.textSecondary, mb: 2 }}>
+                You haven't registered for any expos yet. Browse expos to get started!
+              </Typography>
+              <ActionButton
+                primary
+                startIcon={<Add />}
+                onClick={() => navigate('/exhibitor/browse')}
+              >
+                Browse & Register
+              </ActionButton>
+            </Box>
+          </GlassCard>
         ) : (
-          <Grid container spacing={3}>
-            {profiles.map((profile: ExhibitorProfile) => (
-              <Grid item xs={12} md={6} lg={4} key={profile.profileId}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', flex: 1 }}>
-                        {profile.companyName}
-                      </Typography>
-                      <Chip
-                        label={profile.registrationStatus}
-                        color={getStatusColor(profile.registrationStatus)}
-                        size="small"
-                        sx={{ ml: 1 }}
-                      />
-                    </Box>
-
-                    <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
-                      {profile.expoTitle}
-                    </Typography>
-
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Category: {profile.category}
-                    </Typography>
-
-                    {profile.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          mb: 2,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {profile.description}
-                      </Typography>
-                    )}
-
-                    {profile.booth && (
-                      <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          <Business sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
-                          Booth: {profile.booth.identifier}
+          <AnimatePresence>
+            <Grid container spacing={3}>
+              {profiles.map((profile: ExhibitorProfile, index) => (
+                <Grid item xs={12} md={6} lg={4} key={profile.profileId}>
+                  <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <GlassCard>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: activeTheme.textPrimary }}>
+                          {profile.companyName}
                         </Typography>
+                        <Chip
+                          label={profile.registrationStatus}
+                          size="small"
+                          sx={{
+                            ml: 1,
+                            bgcolor:
+                              profile.registrationStatus === 'approved'
+                                ? `${activeTheme.success}20`
+                                : profile.registrationStatus === 'pending'
+                                ? `${activeTheme.warning}20`
+                                : `${activeTheme.error}20`,
+                            color:
+                              profile.registrationStatus === 'approved'
+                                ? activeTheme.success
+                                : profile.registrationStatus === 'pending'
+                                ? activeTheme.warning
+                                : activeTheme.error,
+                            fontWeight: 700,
+                            border: `1px solid ${
+                              profile.registrationStatus === 'approved'
+                                ? activeTheme.success
+                                : profile.registrationStatus === 'pending'
+                                ? activeTheme.warning
+                                : activeTheme.error
+                            }30`,
+                          }}
+                        />
                       </Box>
-                    )}
 
-                    {profile.registrationStatus === 'rejected' && profile.rejectionReason && (
-                      <Alert severity="error" sx={{ mt: 2 }}>
-                        <Typography variant="caption">Rejection reason: {profile.rejectionReason}</Typography>
-                      </Alert>
-                    )}
-                  </CardContent>
+                      <Typography variant="subtitle1" sx={{ mb: 1, color: activeTheme.accent, fontWeight: 600 }}>
+                        {profile.expoTitle}
+                      </Typography>
 
-                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-                    <Button
-                      size="small"
-                      startIcon={<Visibility />}
-                      onClick={() => navigate(`/exhibitor/profile/${profile.profileId}`)}
-                      variant="outlined"
-                    >
-                      View
-                    </Button>
-                    {profile.registrationStatus === 'approved' && !profile.booth && (
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() =>
-                          navigate(`/exhibitor/expo/${profile.expoId}/floor-plan`, {
-                            state: { profileId: profile.profileId },
-                          })
-                        }
-                      >
-                        Select Booth
-                      </Button>
-                    )}
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                      <Typography variant="body2" sx={{ mb: 2, color: activeTheme.textSecondary }}>
+                        Category: {profile.category}
+                      </Typography>
+
+                      {profile.description && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            mb: 2,
+                            color: activeTheme.textSecondary,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {profile.description}
+                        </Typography>
+                      )}
+
+                      {profile.booth && (
+                        <Box sx={{ mt: 2, p: 2, bgcolor: activeTheme.surface, borderRadius: 2, border: `1px solid ${activeTheme.border}` }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: activeTheme.textPrimary, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Business sx={{ fontSize: 18, color: activeTheme.accent }} />
+                            Booth: {profile.booth.identifier}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {profile.registrationStatus === 'rejected' && profile.rejectionReason && (
+                        <Box sx={{ mt: 2, p: 2, bgcolor: `${activeTheme.error}20`, borderRadius: 2, border: `1px solid ${activeTheme.error}30` }}>
+                          <Typography variant="caption" sx={{ color: activeTheme.error }}>
+                            Rejection reason: {profile.rejectionReason}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
+                        <ActionButton
+                          startIcon={<Visibility />}
+                          onClick={() => navigate(`/exhibitor/profile/${profile.profileId}`)}
+                        >
+                          View
+                        </ActionButton>
+                        {profile.registrationStatus === 'approved' && !profile.booth && (
+                          <ActionButton
+                            primary
+                            onClick={() =>
+                              navigate(`/exhibitor/expo/${profile.expoId}/floor-plan`, {
+                                state: { profileId: profile.profileId },
+                              })
+                            }
+                          >
+                            Select Booth
+                          </ActionButton>
+                        )}
+                      </Box>
+                    </GlassCard>
+                  </MotionBox>
+                </Grid>
+              ))}
+            </Grid>
+          </AnimatePresence>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

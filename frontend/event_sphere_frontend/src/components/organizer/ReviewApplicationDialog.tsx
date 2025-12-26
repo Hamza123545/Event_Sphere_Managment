@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Typography,
   Box,
   Grid,
@@ -21,10 +20,14 @@ import {
   Alert,
   CircularProgress,
   Link,
-  Paper,
 } from '@mui/material';
 import { CheckCircle, Cancel, Description, Email, Phone, Language } from '@mui/icons-material';
 import type { ExhibitorApplication } from '../../types/approval';
+import {
+  GlassCard,
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface ReviewApplicationDialogProps {
   open: boolean;
@@ -59,7 +62,7 @@ export default function ReviewApplicationDialog({
       try {
         await onApprove(application);
         handleClose();
-      } catch (error) {
+      } catch {
         // Error handled by parent
       }
     }
@@ -87,80 +90,121 @@ export default function ReviewApplicationDialog({
     try {
       await onReject(application, rejectionReason.trim());
       handleClose();
-    } catch (error) {
+    } catch {
       // Error handled by parent
     }
   };
 
   if (!application) return null;
 
+  const statusColor = application.registrationStatus === 'approved' ? activeTheme.success :
+                     application.registrationStatus === 'rejected' ? activeTheme.error :
+                     activeTheme.warning;
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {application.logo && (
-              <Avatar src={application.logo} alt={application.companyName} sx={{ mr: 2, width: 48, height: 48 }} />
+              <Avatar 
+                src={application.logo} 
+                alt={application.companyName} 
+                sx={{ 
+                  width: 56, 
+                  height: 56,
+                  border: `2px solid ${activeTheme.accentGlow}`
+                }} 
+              />
             )}
             <Box>
-              <Typography variant="h6">{application.companyName}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: activeTheme.textPrimary }}>
+                {application.companyName}
+              </Typography>
               <Chip
                 label={application.registrationStatus.toUpperCase()}
-                color={
-                  application.registrationStatus === 'approved'
-                    ? 'success'
-                    : application.registrationStatus === 'rejected'
-                      ? 'error'
-                      : 'warning'
-                }
                 size="small"
-                sx={{ mt: 0.5 }}
+                sx={{
+                  mt: 0.5,
+                  bgcolor: `${statusColor}20`,
+                  color: statusColor,
+                  border: `1px solid ${statusColor}30`,
+                  fontWeight: 700
+                }}
               />
             </Box>
           </Box>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ bgcolor: activeTheme.surface }}>
         <Grid container spacing={3}>
           {/* Company Description */}
           <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Description
+            <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 1 }}>
+              DESCRIPTION
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: activeTheme.textSecondary, lineHeight: 1.7 }}>
               {application.description}
             </Typography>
           </Grid>
 
           {/* Category */}
           <Grid item xs={12} sm={6}>
-            <Typography variant="subtitle2" gutterBottom>
-              Category
+            <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 1 }}>
+              CATEGORY
             </Typography>
-            <Chip label={application.category} variant="outlined" />
+            <Chip 
+              label={application.category}
+              sx={{
+                bgcolor: `${activeTheme.accent}20`,
+                color: activeTheme.accent,
+                border: `1px solid ${activeTheme.accent}30`,
+                fontWeight: 700
+              }}
+            />
           </Grid>
 
           {/* Contact Information */}
           <Grid item xs={12} sm={6}>
-            <Typography variant="subtitle2" gutterBottom>
-              Contact Information
+            <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 1 }}>
+              CONTACT INFORMATION
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Email fontSize="small" color="action" />
-                <Typography variant="body2">{application.contactInfo.email}</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Email sx={{ fontSize: 18, color: activeTheme.accent }} />
+                <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
+                  {application.contactInfo.email}
+                </Typography>
               </Box>
               {application.contactInfo.phone && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Phone fontSize="small" color="action" />
-                  <Typography variant="body2">{application.contactInfo.phone}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Phone sx={{ fontSize: 18, color: activeTheme.accent }} />
+                  <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
+                    {application.contactInfo.phone}
+                  </Typography>
                 </Box>
               )}
               {application.contactInfo.website && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Language fontSize="small" color="action" />
-                  <Link href={application.contactInfo.website} target="_blank" rel="noopener noreferrer">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Language sx={{ fontSize: 18, color: activeTheme.accent }} />
+                  <Link 
+                    href={application.contactInfo.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    sx={{ color: activeTheme.accent, fontWeight: 600, '&:hover': { color: activeTheme.accentGlow } }}
+                  >
                     {application.contactInfo.website}
                   </Link>
                 </Box>
@@ -170,12 +214,21 @@ export default function ReviewApplicationDialog({
 
           {/* Products/Services */}
           <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Products/Services ({application.productsServices.length})
+            <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 1 }}>
+              PRODUCTS/SERVICES ({application.productsServices.length})
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {application.productsServices.map((product, index) => (
-                <Chip key={index} label={product} variant="outlined" />
+                <Chip 
+                  key={index} 
+                  label={product}
+                  sx={{
+                    bgcolor: `${activeTheme.accent}20`,
+                    color: activeTheme.accent,
+                    border: `1px solid ${activeTheme.accent}30`,
+                    fontWeight: 600
+                  }}
+                />
               ))}
             </Box>
           </Grid>
@@ -183,32 +236,34 @@ export default function ReviewApplicationDialog({
           {/* Documents */}
           {application.documents && application.documents.length > 0 && (
             <Grid item xs={12}>
-              <Divider sx={{ my: 1 }} />
-              <Typography variant="subtitle2" gutterBottom>
-                Documents ({application.documents.length})
+              <Divider sx={{ my: 2, borderColor: activeTheme.border }} />
+              <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 2 }}>
+                DOCUMENTS ({application.documents.length})
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {application.documents.map((doc, index) => (
-                  <Paper key={index} variant="outlined" sx={{ p: 1.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Description color="primary" />
+                  <GlassCard key={index}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Description sx={{ fontSize: 24, color: activeTheme.accent }} />
                       <Box sx={{ flexGrow: 1 }}>
-                        <Typography variant="body2">{doc.filename}</Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: activeTheme.textPrimary, mb: 0.5 }}>
+                          {doc.filename}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
                           Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      <Button
+                      <ActionButton
                         size="small"
                         href={doc.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="outlined"
+                        component="a"
                       >
                         View
-                      </Button>
+                      </ActionButton>
                     </Box>
-                  </Paper>
+                  </GlassCard>
                 ))}
               </Box>
             </Grid>
@@ -217,8 +272,15 @@ export default function ReviewApplicationDialog({
           {/* Rejection Reason (if rejected) */}
           {application.registrationStatus === 'rejected' && application.rejectionReason && (
             <Grid item xs={12}>
-              <Alert severity="error">
-                <Typography variant="subtitle2" gutterBottom>
+              <Alert 
+                severity="error"
+                sx={{
+                  bgcolor: `${activeTheme.error}20`,
+                  border: `1px solid ${activeTheme.error}30`,
+                  color: activeTheme.textPrimary
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   Rejection Reason
                 </Typography>
                 <Typography variant="body2">{application.rejectionReason}</Typography>
@@ -229,9 +291,9 @@ export default function ReviewApplicationDialog({
           {/* Reject Form */}
           {showRejectForm && application.registrationStatus === 'pending' && (
             <Grid item xs={12}>
-              <Divider sx={{ my: 1 }} />
-              <Typography variant="subtitle2" gutterBottom>
-                Rejection Reason (Required)
+              <Divider sx={{ my: 2, borderColor: activeTheme.border }} />
+              <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, fontWeight: 700, mb: 2 }}>
+                REJECTION REASON (Required)
               </Typography>
               <TextField
                 fullWidth
@@ -246,48 +308,73 @@ export default function ReviewApplicationDialog({
                 helperText={rejectionError || 'Please provide a detailed reason for rejection (10-500 characters)'}
                 placeholder="Enter rejection reason..."
                 disabled={isLoading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: activeTheme.surfaceLight,
+                    color: activeTheme.textPrimary,
+                    '& fieldset': {
+                      borderColor: activeTheme.border,
+                    },
+                    '&:hover fieldset': {
+                      borderColor: activeTheme.accent,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: activeTheme.textSecondary,
+                  },
+                }}
               />
             </Grid>
           )}
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isLoading}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={handleClose} disabled={isLoading}>
           {application.registrationStatus === 'pending' && !showRejectForm ? 'Close' : 'Cancel'}
-        </Button>
+        </ActionButton>
         {application.registrationStatus === 'pending' && !showRejectForm && (
           <>
-            <Button
+            <ActionButton
               onClick={() => setShowRejectForm(true)}
-              variant="outlined"
-              color="error"
               startIcon={<Cancel />}
               disabled={isLoading}
+              sx={{
+                color: activeTheme.error,
+                border: `1px solid ${activeTheme.error}30`,
+                '&:hover': { bgcolor: `${activeTheme.error}20` }
+              }}
             >
               Reject
-            </Button>
-            <Button
+            </ActionButton>
+            <ActionButton
               onClick={handleApprove}
-              variant="contained"
-              color="success"
               startIcon={isLoading ? <CircularProgress size={16} /> : <CheckCircle />}
               disabled={isLoading}
+              sx={{
+                bgcolor: `${activeTheme.success}20`,
+                color: activeTheme.success,
+                border: `1px solid ${activeTheme.success}30`,
+                '&:hover': { bgcolor: `${activeTheme.success}30` }
+              }}
             >
               Approve
-            </Button>
+            </ActionButton>
           </>
         )}
         {showRejectForm && (
-          <Button
+          <ActionButton
             onClick={handleReject}
-            variant="contained"
-            color="error"
             startIcon={isLoading ? <CircularProgress size={16} /> : <Cancel />}
             disabled={isLoading || !rejectionReason.trim()}
+            sx={{
+              color: activeTheme.error,
+              border: `1px solid ${activeTheme.error}30`,
+              '&:hover': { bgcolor: `${activeTheme.error}20` }
+            }}
           >
             Confirm Rejection
-          </Button>
+          </ActionButton>
         )}
       </DialogActions>
     </Dialog>

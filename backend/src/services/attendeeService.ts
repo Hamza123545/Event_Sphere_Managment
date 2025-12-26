@@ -72,8 +72,8 @@ export interface RegisterForExpoInput {
 }
 
 /**
- * Browse available expos for attendees
- * Implements FR-023
+ * Browse available expos for attendees with pagination
+ * Implements FR-023, T237
  */
 export async function browseExpos(options?: {
   status?: 'upcoming' | 'active';
@@ -81,8 +81,22 @@ export async function browseExpos(options?: {
   location?: string;
   dateFrom?: string;
   dateTo?: string;
-}): Promise<ExpoListing[]> {
+  page?: number;
+  limit?: number;
+}): Promise<{
+  expos: ExpoListing[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
   try {
+    const page = options?.page || 1;
+    const limit = Math.min(options?.limit || 20, 100); // Max 100 items per page, default 20
+    const skip = (page - 1) * limit;
+
     const query: any = {
       status: { $in: ['upcoming', 'active'] },
     };
@@ -112,27 +126,55 @@ export async function browseExpos(options?: {
       }
     }
 
+    // Debug logging to help troubleshoot
+    logger.debug('browseExpos query', { query: JSON.stringify(query), options });
+
+    // Get total count for pagination
+    const totalItems = await ExpoEvent.countDocuments(query);
+
     const expos = await ExpoEvent.find(query)
       .select('title description theme dateRange location status')
-      .limit(100)
-      .sort({ 'dateRange.startDate': 1 });
+      .sort({ 'dateRange.startDate': 1 })
+      .skip(skip)
+      .limit(limit);
+    
+    // Debug logging - log found expos
+    logger.debug('browseExpos found expos', { 
+      count: expos.length, 
+      totalItems,
+      expos: expos.map((e: any) => ({ 
+        id: e._id.toString(), 
+        title: e.title, 
+        status: e.status 
+      })) 
+    });
 
-    return expos.map((expo: any) => ({
-      expoId: expo._id.toString(),
-      title: expo.title,
-      description: expo.description,
-      theme: expo.theme,
-      dateRange: {
-        startDate: expo.dateRange.startDate,
-        endDate: expo.dateRange.endDate,
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      expos: expos.map((expo: any) => ({
+        expoId: expo._id.toString(),
+        title: expo.title,
+        description: expo.description,
+        theme: expo.theme,
+        dateRange: {
+          startDate: expo.dateRange.startDate,
+          endDate: expo.dateRange.endDate,
+        },
+        location: {
+          venueName: expo.location.venueName,
+          city: expo.location.city,
+          country: expo.location.country,
+        },
+        status: expo.status as 'upcoming' | 'active',
+      })),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
       },
-      location: {
-        venueName: expo.location.venueName,
-        city: expo.location.city,
-        country: expo.location.country,
-      },
-      status: expo.status as 'upcoming' | 'active',
-    }));
+    };
   } catch (error) {
     logger.error('Error in browseExpos service:', error);
     throw new CustomError('Failed to browse expos', 500, 'BROWSE_EXPOS_ERROR');
@@ -321,14 +363,14 @@ export async function getExhibitorProfile(
   try {
     const profile = await ExhibitorProfile.findById(profileId)
       .populate('booth', 'identifier location')
-      .select('companyName description logo productsServices category booth');
+      .select('companyName description logo productsServices category booth expo registrationStatus');
 
     if (!profile) {
       throw new CustomError('Exhibitor profile not found', 404, 'PROFILE_NOT_FOUND');
     }
 
     // Verify profile belongs to this expo
-    if (profile.expo.toString() !== expoId) {
+    if (profile.expo && profile.expo.toString() !== expoId) {
       throw new CustomError('Exhibitor profile does not belong to this expo', 400, 'INVALID_PROFILE');
     }
 
@@ -378,6 +420,8 @@ export async function viewFloorPlan(expoId: string): Promise<any> {
     // Get floor plan
     const floorPlan = await FloorPlan.findOne({ expo: expoId });
     if (!floorPlan) {
+      // Floor plan not found is a normal condition (not created yet), log as debug
+      logger.debug('Floor plan not found for expo (normal condition)', { expoId });
       throw new CustomError('Floor plan not found for this expo', 404, 'FLOOR_PLAN_NOT_FOUND');
     }
 

@@ -73,7 +73,20 @@ export const validatePassword = body('password')
   .withMessage('Password must contain at least one lowercase letter')
   .matches(/[0-9]/)
   .withMessage('Password must contain at least one number')
-  .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)
+  .matches(/[^a-zA-Z0-9]/)
+  .withMessage('Password must contain at least one special character');
+
+// New password validation (for reset password - uses 'newPassword' field)
+export const validateNewPassword = body('newPassword')
+  .isLength({ min: 8 })
+  .withMessage('Password must be at least 8 characters long')
+  .matches(/[A-Z]/)
+  .withMessage('Password must contain at least one uppercase letter')
+  .matches(/[a-z]/)
+  .withMessage('Password must contain at least one lowercase letter')
+  .matches(/[0-9]/)
+  .withMessage('Password must contain at least one number')
+  .matches(/[^a-zA-Z0-9]/)
   .withMessage('Password must contain at least one special character');
 
 // ObjectId validation for MongoDB

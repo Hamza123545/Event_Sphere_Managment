@@ -10,6 +10,7 @@ import { generateToken, TokenPayload } from '../utils/auth';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 import crypto from 'crypto';
+import { sendPasswordResetEmail } from './emailService';
 
 export interface RegisterInput {
   email: string;
@@ -375,8 +376,25 @@ export async function forgotPassword(email: string): Promise<void> {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: Send password reset email with token (implement in email service)
-    // The email should contain a link like: https://app.eventsphere.com/reset-password?token={resetToken}
+    // Send password reset email
+    try {
+      const userName = user.profile?.firstName
+        ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
+        : user.email;
+      await sendPasswordResetEmail(user.email, userName, resetToken);
+      logger.info('Password reset email sent', {
+        userId: user._id.toString(),
+        email: user.email,
+      });
+    } catch (emailError) {
+      logger.error('Failed to send password reset email', {
+        userId: user._id.toString(),
+        email: user.email,
+        error: emailError,
+      });
+      // Don't fail the password reset request if email fails
+      // The token is still generated and can be used
+    }
   } catch (error) {
     logger.error('Error in forgotPassword service:', error);
     // Don't reveal error details for security

@@ -55,6 +55,17 @@ apiClient.interceptors.response.use(
       console.error('Access forbidden:', error.response.data);
     }
 
+    // Suppress console errors for expected 404s (like missing floor plans)
+    // These are handled gracefully in the UI
+    if (error.response?.status === 404) {
+      const errorCode = (error.response.data as any)?.errorCode;
+      // Only suppress expected "not found" errors, not route 404s
+      if (errorCode === 'FLOOR_PLAN_NOT_FOUND' || errorCode === 'EXPO_NOT_FOUND') {
+        // Don't log these to console - they're expected conditions
+        return Promise.reject(error);
+      }
+    }
+
     // Handle network errors
     if (!error.response) {
       console.error('Network error:', error.message);

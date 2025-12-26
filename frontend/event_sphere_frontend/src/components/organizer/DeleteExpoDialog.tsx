@@ -41,6 +41,7 @@ export default function DeleteExpoDialog({
       onConfirm={onConfirm}
       onCancel={onCancel}
       severity={hasActiveStatus ? 'error' : 'warning'}
+      isLoading={isLoading}
     />
   );
 }

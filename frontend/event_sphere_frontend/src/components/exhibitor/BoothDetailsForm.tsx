@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
@@ -21,6 +20,11 @@ import { Add, Delete } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import type { UpdateBoothDetailsRequest, BoothDetails } from '../../types/exhibitor';
+import {
+  ActionButton,
+  activeTheme,
+  GlassCard,
+} from '../../theme/designSystem';
 
 interface BoothDetailsFormProps {
   open: boolean;
@@ -108,57 +112,104 @@ export default function BoothDetailsForm({
 
   if (!booth) return null;
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Update Booth Details - {booth.identifier}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Update Booth Details - {booth.identifier}
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             {/* Products Showcased */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
                 Products Showcased
               </Typography>
               {productsShowcased.map((product, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 2 }}>
                   <TextField
                     fullWidth
                     placeholder="Enter product name"
                     value={product}
                     onChange={(e) => handleProductChange(index, e.target.value)}
                     disabled={isLoading}
+                    sx={textFieldSx}
                   />
                   {productsShowcased.length > 1 && (
-                    <IconButton onClick={() => removeProduct(index)} disabled={isLoading} color="error">
+                    <IconButton 
+                      onClick={() => removeProduct(index)} 
+                      disabled={isLoading}
+                      sx={{ color: activeTheme.error }}
+                    >
                       <Delete />
                     </IconButton>
                   )}
                 </Box>
               ))}
-              <Button startIcon={<Add />} onClick={addProduct} disabled={isLoading} size="small">
+              <ActionButton startIcon={<Add />} onClick={addProduct} disabled={isLoading} size="small">
                 Add Product
-              </Button>
+              </ActionButton>
             </Grid>
 
             {/* Staff */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
                 Staff
               </Typography>
               {staff.map((member, index) => (
-                <Box key={index} sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
+                <GlassCard key={index} sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 700 }}>
                       Staff Member {index + 1}
                     </Typography>
                     {staff.length > 1 && (
-                      <IconButton onClick={() => removeStaff(index)} disabled={isLoading} color="error" size="small">
+                      <IconButton 
+                        onClick={() => removeStaff(index)} 
+                        disabled={isLoading}
+                        sx={{ color: activeTheme.error }}
+                        size="small"
+                      >
                         <Delete />
                       </IconButton>
                     )}
@@ -172,6 +223,7 @@ export default function BoothDetailsForm({
                         onChange={(e) => handleStaffChange(index, 'name', e.target.value)}
                         disabled={isLoading}
                         required
+                        sx={textFieldSx}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -182,6 +234,7 @@ export default function BoothDetailsForm({
                         onChange={(e) => handleStaffChange(index, 'role', e.target.value)}
                         disabled={isLoading}
                         required
+                        sx={textFieldSx}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -193,24 +246,25 @@ export default function BoothDetailsForm({
                         onChange={(e) => handleStaffChange(index, 'email', e.target.value)}
                         disabled={isLoading}
                         required
+                        sx={textFieldSx}
                       />
                     </Grid>
                   </Grid>
-                </Box>
+                </GlassCard>
               ))}
-              <Button startIcon={<Add />} onClick={addStaff} disabled={isLoading} size="small">
+              <ActionButton startIcon={<Add />} onClick={addStaff} disabled={isLoading} size="small">
                 Add Staff Member
-              </Button>
+              </ActionButton>
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={onClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Save Details'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

@@ -4,9 +4,14 @@
  * Implements T127: User Story 4
  */
 
-import { Box, Paper, Typography, Button, Chip, Tooltip, Alert } from '@mui/material';
-import { Add, Edit } from '@mui/icons-material';
+import { Box, Typography, Chip, Tooltip, Alert } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import type { FloorPlanDetail, BoothSpace } from '../../types/floorPlan';
+import {
+  GlassCard,
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface InteractiveFloorPlanProps {
   floorPlan: FloorPlanDetail;
@@ -30,13 +35,13 @@ export default function InteractiveFloorPlan({
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'available':
-        return '#4caf50'; // green
+        return activeTheme.success;
       case 'reserved':
-        return '#ff9800'; // orange
+        return activeTheme.warning;
       case 'occupied':
-        return '#2196f3'; // blue
+        return activeTheme.accent;
       default:
-        return '#9e9e9e'; // grey
+        return activeTheme.textSecondary;
     }
   };
 
@@ -56,56 +61,83 @@ export default function InteractiveFloorPlan({
   return (
     <Box>
       {/* Floor Plan Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">{floorPlan.name}</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: activeTheme.textPrimary }}>
+          {floorPlan.name}
+        </Typography>
         {onAddBooth && (
-          <Button variant="contained" startIcon={<Add />} onClick={onAddBooth}>
+          <ActionButton primary startIcon={<Add />} onClick={onAddBooth}>
             Add Booth
-          </Button>
+          </ActionButton>
         )}
       </Box>
 
       {/* Metadata */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <Chip label={`Total: ${floorPlan.metadata.totalBooths}`} />
-        <Chip label={`Available: ${floorPlan.metadata.availableBooths}`} color="success" />
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Chip 
+          label={`Total: ${floorPlan.metadata.totalBooths}`}
+          sx={{
+            bgcolor: `${activeTheme.accent}20`,
+            color: activeTheme.accent,
+            border: `1px solid ${activeTheme.accent}30`,
+            fontWeight: 700
+          }}
+        />
+        <Chip 
+          label={`Available: ${floorPlan.metadata.availableBooths}`}
+          sx={{
+            bgcolor: `${activeTheme.success}20`,
+            color: activeTheme.success,
+            border: `1px solid ${activeTheme.success}30`,
+            fontWeight: 700
+          }}
+        />
         <Chip
           label={`Reserved: ${floorPlan.booths.filter((b) => b.status === 'reserved').length}`}
-          color="warning"
+          sx={{
+            bgcolor: `${activeTheme.warning}20`,
+            color: activeTheme.warning,
+            border: `1px solid ${activeTheme.warning}30`,
+            fontWeight: 700
+          }}
         />
         <Chip
           label={`Occupied: ${floorPlan.booths.filter((b) => b.status === 'occupied').length}`}
-          color="primary"
+          sx={{
+            bgcolor: `${activeTheme.accent}20`,
+            color: activeTheme.accent,
+            border: `1px solid ${activeTheme.accent}30`,
+            fontWeight: 700
+          }}
         />
       </Box>
 
       {/* Status Legend */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 20, height: 20, bgcolor: '#4caf50', borderRadius: 0.5 }} />
-          <Typography variant="caption">Available</Typography>
+      <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ width: 24, height: 24, bgcolor: activeTheme.success, borderRadius: 1, boxShadow: `0 0 8px ${activeTheme.success}80` }} />
+          <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>Available</Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 20, height: 20, bgcolor: '#ff9800', borderRadius: 0.5 }} />
-          <Typography variant="caption">Reserved</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ width: 24, height: 24, bgcolor: activeTheme.warning, borderRadius: 1, boxShadow: `0 0 8px ${activeTheme.warning}80` }} />
+          <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>Reserved</Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 20, height: 20, bgcolor: '#2196f3', borderRadius: 0.5 }} />
-          <Typography variant="caption">Occupied</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ width: 24, height: 24, bgcolor: activeTheme.accent, borderRadius: 1, boxShadow: `0 0 8px ${activeTheme.accent}80` }} />
+          <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>Occupied</Typography>
         </Box>
       </Box>
 
       {/* SVG Floor Plan */}
-      <Paper sx={{ p: 2, overflow: 'auto', maxHeight: '70vh' }}>
+      <GlassCard sx={{ p: 3, overflow: 'auto', maxHeight: '70vh' }}>
         {floorPlan.imageUrl ? (
           <Box
             sx={{
               position: 'relative',
               width: '100%',
               height: 'auto',
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 1,
+              border: `2px solid ${activeTheme.border}`,
+              borderRadius: 2,
             }}
           >
             <Box
@@ -158,7 +190,7 @@ export default function InteractiveFloorPlan({
                       height={height}
                       fill={getStatusColor(booth.status)}
                       fillOpacity={0.6}
-                      stroke={isSelected ? '#ff0000' : '#000'}
+                      stroke={isSelected ? activeTheme.accentGlow : activeTheme.border}
                       strokeWidth={isSelected ? 3 : 1}
                       sx={{
                         cursor: onBoothClick ? 'pointer' : 'default',
@@ -178,15 +210,14 @@ export default function InteractiveFloorPlan({
             sx={{
               width: '100%',
               height: 'auto',
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 1,
-              bgcolor: 'action.hover',
+              border: `2px solid ${activeTheme.border}`,
+              borderRadius: 2,
+              bgcolor: activeTheme.surfaceLight,
               minHeight: 400,
             }}
           >
             {/* Floor background */}
-            <rect width={svgWidth} height={svgHeight} fill="#f5f5f5" />
+            <rect width={svgWidth} height={svgHeight} fill={activeTheme.surfaceLight} />
 
             {/* Draw booths */}
             {floorPlan.booths.map((booth) => {
@@ -206,7 +237,7 @@ export default function InteractiveFloorPlan({
                       height={height}
                       fill={getStatusColor(booth.status)}
                       fillOpacity={0.6}
-                      stroke={isSelected ? '#ff0000' : '#000'}
+                      stroke={isSelected ? activeTheme.accentGlow : activeTheme.border}
                       strokeWidth={isSelected ? 3 : 1}
                       style={{ cursor: onBoothClick ? 'pointer' : 'default' }}
                       onClick={() => onBoothClick?.(booth)}
@@ -219,7 +250,7 @@ export default function InteractiveFloorPlan({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fontSize="12"
-                    fill="#000"
+                    fill={activeTheme.textPrimary}
                     fontWeight="bold"
                   >
                     {booth.identifier}
@@ -229,10 +260,18 @@ export default function InteractiveFloorPlan({
             })}
           </Box>
         )}
-      </Paper>
+      </GlassCard>
 
       {floorPlan.booths.length === 0 && (
-        <Alert severity="info" sx={{ mt: 2 }}>
+        <Alert 
+          severity="info" 
+          sx={{ 
+            mt: 3,
+            bgcolor: `${activeTheme.info}20`,
+            border: `1px solid ${activeTheme.info}30`,
+            color: activeTheme.textPrimary
+          }}
+        >
           No booths added yet. Click "Add Booth" to start creating booth spaces.
         </Alert>
       )}

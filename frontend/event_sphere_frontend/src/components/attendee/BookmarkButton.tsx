@@ -4,10 +4,14 @@
  * Implements T112: User Story 3
  */
 
-import { Button, Alert, Snackbar } from '@mui/material';
+import { Alert, Snackbar } from '@mui/material';
 import { Bookmark, BookmarkBorder } from '@mui/icons-material';
 import { useState } from 'react';
 import type { SessionDetail } from '../../types/attendee';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface BookmarkButtonProps {
   session: SessionDetail;
@@ -52,15 +56,14 @@ export default function BookmarkButton({
 
   return (
     <>
-      <Button
-        variant={isBookmarked ? 'outlined' : 'contained'}
+      <ActionButton
+        primary={!isBookmarked && !isFull}
         startIcon={isBookmarked ? <Bookmark /> : <BookmarkBorder />}
         onClick={handleClick}
         disabled={isLoading || (!isBookmarked && isFull)}
-        color={isBookmarked ? 'primary' : 'primary'}
       >
         {isBookmarked ? 'Bookmarked' : isFull ? 'Full' : 'Bookmark'}
-      </Button>
+      </ActionButton>
 
       <Snackbar
         open={!!error}
@@ -68,7 +71,16 @@ export default function BookmarkButton({
         onClose={() => setError(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+        <Alert 
+          onClose={() => setError(null)} 
+          severity="error" 
+          sx={{ 
+            width: '100%',
+            bgcolor: `${activeTheme.error}20`,
+            border: `1px solid ${activeTheme.error}30`,
+            color: activeTheme.textPrimary
+          }}
+        >
           {error}
         </Alert>
       </Snackbar>

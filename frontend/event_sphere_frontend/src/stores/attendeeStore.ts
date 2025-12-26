@@ -80,7 +80,7 @@ export const useAttendeeStore = create<AttendeeState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await attendeeApi.browseExpos(params);
-          set({ expos: response.expos, isLoading: false });
+          set({ expos: Array.isArray(response.expos) ? response.expos : [], isLoading: false });
         } catch (error: any) {
           set({
             error: error.response?.data?.message || error.message || 'Failed to browse expos',
@@ -226,10 +226,15 @@ export const useAttendeeStore = create<AttendeeState>()(
           const floorPlan = await attendeeApi.viewFloorPlan(expoId);
           set({ floorPlan, isLoading: false });
         } catch (error: any) {
-          set({
-            error: error.response?.data?.message || error.message || 'Failed to view floor plan',
-            isLoading: false,
-          });
+          // If floor plan doesn't exist (404), that's okay - just set it to null
+          if (error.response?.status === 404 || error.response?.data?.errorCode === 'FLOOR_PLAN_NOT_FOUND') {
+            set({ floorPlan: null, isLoading: false });
+          } else {
+            set({
+              error: error.response?.data?.message || error.message || 'Failed to view floor plan',
+              isLoading: false,
+            });
+          }
         }
       },
 

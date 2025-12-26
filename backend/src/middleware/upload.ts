@@ -6,7 +6,7 @@
 
 import multer from 'multer';
 import path from 'path';
-import { Request } from 'express';
+import { Request, RequestHandler } from 'express';
 import { CustomError } from './errorHandler';
 import { logger } from '../utils/logger';
 import fs from 'fs';
@@ -19,13 +19,17 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, file, cb) => {
     // Store files in subdirectories based on type
     let subDir = 'general';
     if (file.fieldname === 'logo') {
       subDir = 'logos';
     } else if (file.fieldname === 'documents' || file.fieldname.startsWith('documents')) {
       subDir = 'documents';
+    } else if (file.fieldname === 'floorPlanImage' || file.fieldname === 'image') {
+      subDir = 'floor-plans';
+    } else if (file.fieldname === 'expoImage') {
+      subDir = 'expos';
     }
     
     const dir = path.join(uploadsDir, subDir);
@@ -34,7 +38,7 @@ const storage = multer.diskStorage({
     }
     cb(null, dir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     // Generate unique filename: timestamp-random-originalname
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
@@ -45,7 +49,7 @@ const storage = multer.diskStorage({
 
 // File filter function
 const fileFilter = (
-  req: Request,
+  _req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ): void => {
@@ -86,9 +90,9 @@ const upload = multer({
 });
 
 // Middleware for logo upload (single file, max 5MB for logo)
-export const uploadLogo = multer({
+export const uploadLogo: RequestHandler = multer({
   storage,
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     // Logo must be an image
     if (file.mimetype.startsWith('image/')) {
       const ext = path.extname(file.originalname).toLowerCase();
@@ -107,7 +111,7 @@ export const uploadLogo = multer({
 }).single('logo');
 
 // Middleware for document uploads (multiple files, max 10MB each)
-export const uploadDocuments = multer({
+export const uploadDocuments: RequestHandler = multer({
   storage,
   fileFilter,
   limits: {
@@ -117,15 +121,57 @@ export const uploadDocuments = multer({
 }).array('documents', 10);
 
 // Combined middleware for exhibitor registration (logo + documents)
-export const uploadExhibitorFiles = upload.fields([
+export const uploadExhibitorFiles: RequestHandler = upload.fields([
   { name: 'logo', maxCount: 1 },
   { name: 'documents', maxCount: 10 },
 ]);
 
+// Middleware for floor plan image upload (single image file)
+export const uploadFloorPlanImage: RequestHandler = multer({
+  storage,
+  fileFilter: (_req, file, cb) => {
+    // Floor plan image must be an image
+    if (file.mimetype.startsWith('image/')) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new CustomError('Floor plan image must be JPG, PNG, GIF, or WEBP', 400, 'INVALID_FILE_TYPE'));
+      }
+    } else {
+      cb(new CustomError('Floor plan image must be an image file', 400, 'INVALID_FILE_TYPE'));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max for floor plan images
+  },
+}).single('image');
+
+// Middleware for expo image upload (single image file)
+export const uploadExpoImage: RequestHandler = multer({
+  storage,
+  fileFilter: (_req, file, cb) => {
+    // Expo image must be an image
+    if (file.mimetype.startsWith('image/')) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new CustomError('Expo image must be JPG, PNG, GIF, or WEBP', 400, 'INVALID_FILE_TYPE'));
+      }
+    } else {
+      cb(new CustomError('Expo image must be an image file', 400, 'INVALID_FILE_TYPE'));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max for expo images
+  },
+}).single('expoImage');
+
 // Error handling wrapper
 export const handleUploadError = (
   err: Error,
-  req: Request,
+  _req: Request,
   res: any,
   next: any
 ): void => {

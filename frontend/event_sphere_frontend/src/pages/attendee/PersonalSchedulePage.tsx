@@ -7,20 +7,24 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
-  Card,
-  CardContent,
   Alert,
   Chip,
-  Button,
 } from '@mui/material';
-import { ArrowBack, Schedule, Warning } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import { ArrowBack, Schedule, Warning, LocationOn } from '@mui/icons-material';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import { useAttendeeStore } from '../../stores/attendeeStore';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function PersonalSchedulePage() {
   const navigate = useNavigate();
@@ -66,71 +70,140 @@ export default function PersonalSchedulePage() {
   const dates = Object.keys(sessionsByDate).sort();
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Attendee Portal" />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/attendee')} sx={{ mb: 2 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar navItems={[
+        { label: 'Explore', path: '/attendee/expos' },
+        { label: 'My Events', path: '/attendee' },
+      ]} />
+      
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton 
+            startIcon={<ArrowBack />} 
+            onClick={() => navigate('/attendee')} 
+            sx={{ mb: 3 }}
+          >
+            Back to Dashboard
+          </ActionButton>
+          <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: '-2px' }}>
+            My Personal Schedule
+          </Typography>
+          <Typography variant="h6" sx={{ color: activeTheme.textSecondary, fontWeight: 500 }}>
+            All your bookmarked sessions across all expos
+          </Typography>
+        </MotionBox>
 
-        <Typography variant="h4" component="h1" gutterBottom>
-          My Personal Schedule
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          All your bookmarked sessions across all expos
-        </Typography>
-
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         {isLoading && personalSchedule.length === 0 ? (
-          <LoadingSpinner />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
         ) : personalSchedule.length === 0 ? (
-          <Alert severity="info">
-            You haven't bookmarked any sessions yet. Browse expos to find interesting sessions!
-          </Alert>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography sx={{ color: activeTheme.textSecondary, mb: 2 }}>
+                You haven't bookmarked any sessions yet. Browse expos to find interesting sessions!
+              </Typography>
+              <ActionButton primary onClick={() => navigate('/attendee/expos')}>
+                Browse Expos
+              </ActionButton>
+            </Box>
+          </GlassCard>
         ) : (
           <Box>
-            {dates.map((date) => (
-              <Box key={date} sx={{ mb: 4 }}>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-                  {formatDate(date)}
-                </Typography>
+            {dates.map((date, dateIndex) => (
+              <Box key={date} sx={{ mb: 6 }}>
+                <MotionBox
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: dateIndex * 0.1 }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
+                    {formatDate(date)}
+                  </Typography>
+                </MotionBox>
 
-                {sessionsByDate[date].map((session) => (
-                  <Card
+                {sessionsByDate[date].map((session, sessionIndex) => (
+                  <MotionBox
                     key={session.sessionId}
-                    sx={{
-                      mb: 2,
-                      borderLeft: session.conflicts.length > 0 ? 4 : 0,
-                      borderColor: session.conflicts.length > 0 ? 'warning.main' : 'transparent',
-                    }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (dateIndex * 0.1) + (sessionIndex * 0.05) }}
+                    sx={{ mb: 3 }}
                   >
-                    <CardContent>
+                    <GlassCard
+                      sx={{
+                        borderLeft: session.conflicts.length > 0 ? `4px solid ${activeTheme.warning}` : 'none',
+                      }}
+                    >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" component="h3" gutterBottom>
+                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, color: activeTheme.textPrimary }}>
                             {session.title}
                           </Typography>
-                          <Box sx={{ display: 'flex', gap: 2, mb: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="body2" color="text.secondary">
-                              <Schedule fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                              {formatTime(session.schedule.startTime)} - {formatTime(session.schedule.endTime)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Location: {session.location.room}
-                              {session.location.building && `, ${session.location.building}`}
-                            </Typography>
+                          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: activeTheme.textSecondary }}>
+                              <Schedule sx={{ fontSize: 16 }} />
+                              <Typography variant="body2">
+                                {formatTime(session.schedule.startTime)} - {formatTime(session.schedule.endTime)}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: activeTheme.textSecondary }}>
+                              <LocationOn sx={{ fontSize: 16 }} />
+                              <Typography variant="body2">
+                                {session.location.room}
+                                {session.location.building && `, ${session.location.building}`}
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                            <Chip label={session.category} size="small" variant="outlined" />
-                            <Chip label={session.topic} size="small" variant="outlined" />
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                            <Chip 
+                              label={session.category} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: `${activeTheme.accent}20`,
+                                color: activeTheme.accent,
+                                border: `1px solid ${activeTheme.accent}30`,
+                                fontWeight: 600
+                              }} 
+                            />
+                            <Chip 
+                              label={session.topic} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: `${activeTheme.accent}20`,
+                                color: activeTheme.accent,
+                                border: `1px solid ${activeTheme.accent}30`,
+                                fontWeight: 600
+                              }} 
+                            />
                           </Box>
                         </Box>
                       </Box>
 
                       {session.conflicts.length > 0 && (
-                        <Alert severity="warning" icon={<Warning />} sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" gutterBottom>
+                        <Alert 
+                          severity="warning" 
+                          icon={<Warning />} 
+                          sx={{ 
+                            mt: 2,
+                            bgcolor: `${activeTheme.warning}20`,
+                            border: `1px solid ${activeTheme.warning}30`,
+                            color: activeTheme.textPrimary,
+                          }}
+                        >
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
                             Scheduling Conflict
                           </Typography>
                           <Typography variant="body2">
@@ -138,15 +211,15 @@ export default function PersonalSchedulePage() {
                           </Typography>
                         </Alert>
                       )}
-                    </CardContent>
-                  </Card>
+                    </GlassCard>
+                  </MotionBox>
                 ))}
               </Box>
             ))}
           </Box>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

@@ -1,5 +1,7 @@
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
 import { verifyToken, TokenPayload } from '../utils/auth';
 import { logger } from '../utils/logger';
 import mongoose from 'mongoose';
@@ -56,23 +58,66 @@ function authenticateSocket(socket: Socket): TokenPayload | null {
 
 /**
  * Setup Socket.io server with JWT authentication and room management
+ * Implements T239 - Redis adapter for Socket.io (enable horizontal scaling)
  * @param httpServer HTTP server instance
  * @returns Socket.IO server instance
  */
-export function setupSocketIO(httpServer: HTTPServer): SocketIOServer {
+export async function setupSocketIO(httpServer: HTTPServer): Promise<SocketIOServer> {
   if (io) {
     return io;
   }
 
+  // Socket.io CORS configuration - match the same origins as regular CORS
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.SOCKET_IO_CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps)
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          logger.warn('Socket.io CORS: Origin not allowed', { origin });
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
+  // Setup Redis adapter for horizontal scaling (T239)
+  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+  try {
+    const pubClient = createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+
+    io.adapter(createAdapter(pubClient, subClient));
+
+    pubClient.on('error', (err) => {
+      logger.error('Redis pub client error:', err);
+    });
+
+    subClient.on('error', (err) => {
+      logger.error('Redis sub client error:', err);
+    });
+
+    logger.info('Socket.io Redis adapter initialized for horizontal scaling');
+  } catch (error) {
+    logger.warn('Failed to setup Redis adapter for Socket.io, using default adapter:', error);
+    // Continue without Redis adapter - single instance will work fine
+  }
 
   // Authentication middleware
   io.use((socket, next) => {
@@ -275,8 +320,14 @@ function initializeChangeStreams(): void {
       }
     });
 
-    expoEventStream.on('error', (error: Error) => {
-      logger.error('ExpoEvent change stream error:', error);
+    expoEventStream.on('error', (error: any) => {
+      // MongoDB Change Streams require replica sets - expected error in local dev
+      if (error?.code === 40573 || error?.codeName === 'Location40573' || 
+          error?.message?.includes('replica sets')) {
+        logger.warn('Change Streams not available (replica set required). Real-time updates via change streams disabled. Service-layer broadcasts still work.');
+      } else {
+        logger.error('ExpoEvent change stream error:', error);
+      }
     });
 
     // Watch Session collection for deletions
@@ -301,7 +352,13 @@ function initializeChangeStreams(): void {
       // The deleteSession service function already broadcasts session-deleted event
     });
 
-    sessionStream.on('error', (error: Error) => {
+    sessionStream.on('error', (error: any) => {
+      // MongoDB Change Streams require replica sets - expected error in local dev
+      if (error?.code === 40573 || error?.codeName === 'Location40573' || 
+          error?.message?.includes('replica sets')) {
+        // Already logged by expoEventStream, skip duplicate warning
+        return;
+      }
       logger.error('Session change stream error:', error);
     });
 
@@ -350,7 +407,13 @@ function initializeChangeStreams(): void {
       }
     });
 
-    boothSpaceStream.on('error', (error: Error) => {
+    boothSpaceStream.on('error', (error: any) => {
+      // MongoDB Change Streams require replica sets - expected error in local dev
+      if (error?.code === 40573 || error?.codeName === 'Location40573' || 
+          error?.message?.includes('replica sets')) {
+        // Already logged by expoEventStream, skip duplicate warning
+        return;
+      }
       logger.error('BoothSpace change stream error:', error);
     });
 

@@ -14,16 +14,16 @@ import expoRoutes from './expoRoutes';
 import exhibitorRoutes from './exhibitorRoutes';
 import attendeeRoutes from './attendeeRoutes';
 import feedbackRoutes from './feedbackRoutes';
-import messagingRoutes from './messagingRoutes';
-import feedbackRoutes from './feedbackRoutes';
+// Note: Health routes are mounted in app.ts before API routes
 
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/expos', expoRoutes);
 router.use('/exhibitor', exhibitorRoutes);
 router.use('/attendee', attendeeRoutes);
-router.use('/messages', messagingRoutes);
 router.use('/feedback', feedbackRoutes);
+// Note: Messaging routes are integrated within exhibitorRoutes and attendeeRoutes
+// per T163 - no separate messagingRoutes file needed
 
 // API info endpoint
 router.get('/', (_req, res) => {

@@ -5,15 +5,21 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Box, Button, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import ProfileView from '../../components/exhibitor/ProfileView';
 import EditProfileForm from '../../components/exhibitor/EditProfileForm';
 import BoothDetailsForm from '../../components/exhibitor/BoothDetailsForm';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
+import {
+  PageContainer,
+  BackgroundGlows,
+  ActionButton,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function ProfileDetailPage() {
   const { profileId } = useParams<{ profileId: string }>();
@@ -42,33 +48,45 @@ export default function ProfileDetailPage() {
 
   if (isLoading && !selectedProfile) {
     return (
-      <>
-        <AppBar title="Exhibitor Portal" />
+      <PageContainer>
+        <ModernNavbar />
         <LoadingSpinner fullScreen />
-      </>
+      </PageContainer>
     );
   }
 
   if (!selectedProfile) {
     return (
-      <>
-        <AppBar title="Exhibitor Portal" />
-        <Container>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
           <ErrorAlert message="Profile not found" severity="error" />
-        </Container>
-      </>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Exhibitor Portal" />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 2 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/exhibitor')} sx={{ mb: 3 }}>
+            Back to Dashboard
+          </ActionButton>
+        </MotionBox>
 
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         <ProfileView
           profile={selectedProfile}
@@ -98,8 +116,8 @@ export default function ProfileDetailPage() {
             onSuccess={handleEditSuccess}
           />
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

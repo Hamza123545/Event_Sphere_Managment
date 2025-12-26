@@ -38,8 +38,8 @@ export interface ExhibitorApplication {
 }
 
 /**
- * List pending exhibitor applications for an expo
- * Implements T145
+ * List pending exhibitor applications for an expo with pagination
+ * Implements T145, T237
  */
 export async function listPendingApplications(
   expoId: string,
@@ -47,8 +47,18 @@ export async function listPendingApplications(
   userRole: string,
   options?: {
     status?: 'pending' | 'approved' | 'rejected';
+    page?: number;
+    limit?: number;
   }
-): Promise<ExhibitorApplication[]> {
+): Promise<{
+  applications: ExhibitorApplication[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
   try {
     // RBAC: Only organizer who created expo or admin can view applications
     const expo = await ExpoEvent.findById(expoId);
@@ -60,19 +70,37 @@ export async function listPendingApplications(
       throw new CustomError('Only the organizer who created this expo can view applications', 403, 'FORBIDDEN');
     }
 
+    const page = options?.page || 1;
+    const limit = Math.min(options?.limit || 20, 100); // Max 100 items per page, default 20
+    const skip = (page - 1) * limit;
+
     // Build query
     const query: any = { expo: expoId };
     if (options?.status) {
       query.registrationStatus = options.status;
-    } else {
-      // Default to all statuses if not specified
     }
+    // Default to all statuses if not specified
+
+    // Get total count for pagination
+    const totalItems = await ExhibitorProfile.countDocuments(query);
 
     const profiles = await ExhibitorProfile.find(query)
       .populate('user', 'email profile.firstName profile.lastName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    return profiles.map((profile: any) => formatApplication(profile));
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      applications: profiles.map((profile: any) => formatApplication(profile)),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
   } catch (error) {
     if (error instanceof CustomError) {
       throw error;

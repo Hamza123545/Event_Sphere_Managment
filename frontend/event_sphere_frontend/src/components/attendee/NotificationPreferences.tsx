@@ -6,7 +6,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Paper,
   Typography,
   FormControlLabel,
   Checkbox,
@@ -15,13 +14,17 @@ import {
   Select,
   MenuItem,
   Box,
-  Button,
   FormGroup,
   Switch,
   FormLabel,
   Alert,
 } from '@mui/material';
 import { useNotificationsStore } from '../../stores/notificationsStore';
+import {
+  GlassCard,
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 export default function NotificationPreferences() {
   const { preferences, updatePreferences } = useNotificationsStore();
@@ -58,19 +61,28 @@ export default function NotificationPreferences() {
   ];
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
+    <GlassCard>
+      <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
         Notification Preferences
       </Typography>
 
       {saved && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSaved(false)}>
+        <Alert 
+          severity="success" 
+          sx={{ 
+            mb: 3,
+            bgcolor: `${activeTheme.success}20`,
+            border: `1px solid ${activeTheme.success}30`,
+            color: activeTheme.textPrimary
+          }} 
+          onClose={() => setSaved(false)}
+        >
           Preferences saved successfully
         </Alert>
       )}
 
-      <FormGroup sx={{ mb: 3 }}>
-        <FormLabel component="legend" sx={{ mb: 1 }}>
+      <FormGroup sx={{ mb: 4 }}>
+        <FormLabel component="legend" sx={{ mb: 2, color: activeTheme.textPrimary, fontWeight: 700 }}>
           Notification Channels
         </FormLabel>
         <FormControlLabel
@@ -78,23 +90,35 @@ export default function NotificationPreferences() {
             <Checkbox
               checked={localPreferences.channels.includes('email')}
               onChange={(e) => handleChannelChange('email', e.target.checked)}
+              sx={{
+                color: activeTheme.accent,
+                '&.Mui-checked': {
+                  color: activeTheme.accent,
+                },
+              }}
             />
           }
-          label="Email"
+          label={<Typography sx={{ color: activeTheme.textPrimary }}>Email</Typography>}
         />
         <FormControlLabel
           control={
             <Checkbox
               checked={localPreferences.channels.includes('in-app')}
               onChange={(e) => handleChannelChange('in-app', e.target.checked)}
+              sx={{
+                color: activeTheme.accent,
+                '&.Mui-checked': {
+                  color: activeTheme.accent,
+                },
+              }}
             />
           }
-          label="In-App Notifications"
+          label={<Typography sx={{ color: activeTheme.textPrimary }}>In-App Notifications</Typography>}
         />
       </FormGroup>
 
-      <FormControl fullWidth sx={{ mb: 3 }}>
-        <InputLabel>Default Reminder Time</InputLabel>
+      <FormControl fullWidth sx={{ mb: 4 }}>
+        <InputLabel sx={{ color: activeTheme.textSecondary }}>Default Reminder Time</InputLabel>
         <Select
           value={localPreferences.defaultMinutesBefore}
           label="Default Reminder Time"
@@ -104,6 +128,16 @@ export default function NotificationPreferences() {
               defaultMinutesBefore: e.target.value as number,
             }))
           }
+          sx={{
+            bgcolor: activeTheme.surfaceLight,
+            color: activeTheme.textPrimary,
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: activeTheme.border,
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: activeTheme.accent,
+            },
+          }}
         >
           {reminderTimeOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -123,24 +157,29 @@ export default function NotificationPreferences() {
                 soundEnabled: e.target.checked,
               }))
             }
+            sx={{
+              '& .MuiSwitch-switchBase.Mui-checked': {
+                color: activeTheme.accent,
+              },
+              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                bgcolor: activeTheme.accent,
+              },
+            }}
           />
         }
-        label="Enable sound for notifications"
-        sx={{ mb: 2 }}
+        label={<Typography sx={{ color: activeTheme.textPrimary }}>Enable sound for notifications</Typography>}
+        sx={{ mb: 3 }}
       />
 
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="contained" onClick={handleSave}>
+        <ActionButton primary onClick={handleSave}>
           Save Preferences
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => setLocalPreferences(preferences)}
-        >
+        </ActionButton>
+        <ActionButton onClick={() => setLocalPreferences(preferences)}>
           Reset
-        </Button>
+        </ActionButton>
       </Box>
-    </Paper>
+    </GlassCard>
   );
 }
 

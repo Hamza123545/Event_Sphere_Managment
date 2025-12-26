@@ -7,21 +7,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
-  Button,
   Alert,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
-import { ArrowBack, Add, Edit } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import { ArrowBack, Add } from '@mui/icons-material';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 import CreateFloorPlanForm from '../../components/organizer/CreateFloorPlanForm';
 import AddBoothForm from '../../components/organizer/AddBoothForm';
 import InteractiveFloorPlan from '../../components/organizer/InteractiveFloorPlan';
@@ -50,7 +51,7 @@ export default function FloorPlanEditorPage() {
   const [addBoothFormOpen, setAddBoothFormOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedBooth, setSelectedBooth] = useState<BoothSpace | null>(null);
-  const [approvedExhibitors, setApprovedExhibitors] = useState<any[]>([]);
+  const [approvedExhibitors, setApprovedExhibitors] = useState<Array<{ profileId: string; companyName: string; category: string }>>([]);
 
   useEffect(() => {
     if (expoId) {
@@ -72,7 +73,10 @@ export default function FloorPlanEditorPage() {
   useEffect(() => {
     if (expoId && assignDialogOpen) {
       // Placeholder - would fetch from API
-      setApprovedExhibitors([]);
+      // Using setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setApprovedExhibitors([]);
+      }, 0);
     }
   }, [expoId, assignDialogOpen]);
 
@@ -104,37 +108,57 @@ export default function FloorPlanEditorPage() {
 
   if (!expoId) {
     return (
-      <>
-        <AppBar title="Organizer Portal" />
-        <Container>Invalid expo ID</Container>
-      </>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
+          <Alert severity="error" sx={{ bgcolor: `${activeTheme.error}20`, border: `1px solid ${activeTheme.error}30` }}>
+            Invalid expo ID
+          </Alert>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Organizer Portal" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 2 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 3 }}>
+            Back to Dashboard
+          </ActionButton>
+        </MotionBox>
 
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         {isLoading && !floorPlan ? (
-          <LoadingSpinner />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
         ) : !floorPlan ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h5" gutterBottom>
-              No Floor Plan Found
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Create a floor plan to start managing booth spaces for this expo.
-            </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={() => setCreateFormOpen(true)}>
-              Create Floor Plan
-            </Button>
-          </Paper>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
+                No Floor Plan Found
+              </Typography>
+              <Typography variant="body1" sx={{ color: activeTheme.textSecondary, mb: 4 }}>
+                Create a floor plan to start managing booth spaces for this expo.
+              </Typography>
+              <ActionButton primary startIcon={<Add />} onClick={() => setCreateFormOpen(true)}>
+                Create Floor Plan
+              </ActionButton>
+            </Box>
+          </GlassCard>
         ) : (
           <Box>
             <InteractiveFloorPlan
@@ -180,8 +204,8 @@ export default function FloorPlanEditorPage() {
             error={error}
           />
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

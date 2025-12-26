@@ -25,7 +25,15 @@ import {
   validateBoothSize,
   validateBoothLocation,
   validateBoothPriceTier,
+  validateRecipientId,
+  validateMessageSubject,
+  validateMessageContent,
+  validateMessageContext,
+  validateRelatedExpoId,
 } from '../middleware/validator';
+import { asyncHandler } from '../middleware/errorHandler';
+import { uploadFloorPlanImage, uploadExpoImage, handleUploadError } from '../middleware/upload';
+import { saveFileInfo } from '../services/uploadService';
 
 const router: ExpressRouter = Router();
 
@@ -68,9 +76,19 @@ router.get(
 /**
  * POST /expos
  * Create new expo event
+ * Supports both image file upload and imageUrl
  */
 router.post(
   '/',
+  (req: any, res: any, next: any) => {
+    // Handle file upload if present
+    uploadExpoImage(req, res, (err: any) => {
+      if (err) {
+        return handleUploadError(err, req, res, next);
+      }
+      next();
+    });
+  },
   validate([
     validateString('title', { min: 5, max: 200 }),
     validateString('description', { min: 20, max: 5000 }),
@@ -101,10 +119,38 @@ router.post(
       .isLength({ min: 1, max: 100 })
       .withMessage('Country must be between 1 and 100 characters'),
     body('location.zipCode').optional().trim().isLength({ max: 20 }),
+    body('imageUrl').optional().isURL().withMessage('Image URL must be a valid URL'),
   ]),
-  async (req: AuthRequest, res, next) => {
+  asyncHandler(async (req: AuthRequest, res, next) => {
     try {
-      const expo = await expoService.createExpo(req.user!.userId, req.body);
+      // If file was uploaded, process it and get URL
+      let imageUrl = req.body.imageUrl;
+      if (req.file) {
+        const fileInfo = saveFileInfo(req.file);
+        imageUrl = fileInfo.url;
+      }
+
+      // Parse FormData nested fields (when using multipart/form-data)
+      const expoData: any = {
+        title: req.body.title,
+        description: req.body.description,
+        theme: req.body.theme,
+        dateRange: {
+          startDate: req.body['dateRange.startDate'] || req.body.dateRange?.startDate || req.body.dateRange?.[0]?.startDate,
+          endDate: req.body['dateRange.endDate'] || req.body.dateRange?.endDate || req.body.dateRange?.[0]?.endDate,
+        },
+        location: {
+          venueName: req.body['location.venueName'] || req.body.location?.venueName || req.body.location?.[0]?.venueName,
+          address: req.body['location.address'] || req.body.location?.address || req.body.location?.[0]?.address,
+          city: req.body['location.city'] || req.body.location?.city || req.body.location?.[0]?.city,
+          state: req.body['location.state'] || req.body.location?.state || req.body.location?.[0]?.state,
+          country: req.body['location.country'] || req.body.location?.country || req.body.location?.[0]?.country,
+          zipCode: req.body['location.zipCode'] || req.body.location?.zipCode || req.body.location?.[0]?.zipCode,
+        },
+        imageUrl,
+      };
+
+      const expo = await expoService.createExpo(req.user!.userId, expoData);
       res.status(201).json({
         success: true,
         message: 'Expo created successfully',
@@ -113,7 +159,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -139,9 +185,19 @@ router.get(
 /**
  * PUT /expos/:id
  * Update expo event
+ * Supports both image file upload and imageUrl
  */
 router.put(
   '/:id',
+  (req: any, res: any, next: any) => {
+    // Handle file upload if present
+    uploadExpoImage(req, res, (err: any) => {
+      if (err) {
+        return handleUploadError(err, req, res, next);
+      }
+      next();
+    });
+  },
   validate([
     validateObjectId('id'),
     validateString('title', { min: 5, max: 200, required: false }),
@@ -167,10 +223,49 @@ router.put(
       .optional()
       .isIn(['draft', 'upcoming', 'active', 'cancelled'])
       .withMessage('Invalid status (completed status cannot be set manually)'),
+    body('imageUrl').optional().isURL().withMessage('Image URL must be a valid URL'),
   ]),
-  async (req: AuthRequest, res, next) => {
+  asyncHandler(async (req: AuthRequest, res, next) => {
     try {
-      const expo = await expoService.updateExpo(req.params.id, req.user!.userId, req.user!.role, req.body);
+      // If file was uploaded, process it and get URL
+      let imageUrl = req.body.imageUrl;
+      if (req.file) {
+        const fileInfo = saveFileInfo(req.file);
+        imageUrl = fileInfo.url;
+      }
+      // Handle image removal (send null if explicitly set to empty string)
+      if (req.body.removeImage === 'true' || req.body.removeImage === true) {
+        imageUrl = null;
+      }
+
+      // Build update object (handle both JSON and FormData)
+      const updateData: any = {};
+      if (req.body.title) updateData.title = req.body.title;
+      if (req.body.description) updateData.description = req.body.description;
+      if (req.body.theme !== undefined) updateData.theme = req.body.theme;
+      if (req.body.dateRange) {
+        updateData.dateRange = {
+          startDate: req.body['dateRange.startDate'] || req.body.dateRange?.startDate,
+          endDate: req.body['dateRange.endDate'] || req.body.dateRange?.endDate,
+        };
+      }
+      if (req.body.location) {
+        updateData.location = {
+          venueName: req.body['location.venueName'] || req.body.location?.venueName,
+          address: req.body['location.address'] || req.body.location?.address,
+          city: req.body['location.city'] || req.body.location?.city,
+          state: req.body['location.state'] || req.body.location?.state,
+          country: req.body['location.country'] || req.body.location?.country,
+          zipCode: req.body['location.zipCode'] || req.body.location?.zipCode,
+        };
+      }
+      if (req.body.status) updateData.status = req.body.status;
+      // Only set imageUrl if it's explicitly provided (including null for removal)
+      if (req.body.removeImage === 'true' || req.body.removeImage === true || req.file || req.body.imageUrl !== undefined) {
+        updateData.imageUrl = imageUrl;
+      }
+
+      const expo = await expoService.updateExpo(req.params.id, req.user!.userId, req.user!.role, updateData);
       res.status(200).json({
         success: true,
         message: 'Expo updated successfully. Changes propagated to all users.',
@@ -179,7 +274,7 @@ router.put(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -225,19 +320,49 @@ router.get(
 /**
  * POST /expos/:id/floor-plan
  * Create floor plan for expo
+ * Supports both image file upload and imageUrl
  */
 router.post(
   '/:id/floor-plan',
+  validate([validateObjectId('id')]),
+  (req: any, res: any, next: any) => {
+    // Handle file upload if present
+    uploadFloorPlanImage(req, res, (err: any) => {
+      if (err) {
+        return handleUploadError(err, req, res, next);
+      }
+      next();
+    });
+  },
   validate([
-    validateObjectId('id'),
     validateFloorPlanName,
     ...validateFloorPlanDimensions,
     body('imageUrl').optional().isURL().withMessage('Image URL must be a valid URL'),
     body('metadata.scale').optional().isFloat({ min: 1, max: 100 }).withMessage('Scale must be between 1 and 100'),
   ]),
-  async (req: AuthRequest, res, next) => {
+  asyncHandler(async (req: AuthRequest, res, next) => {
     try {
-      const floorPlan = await floorPlanService.createFloorPlan(req.params.id, req.user!.userId, req.body);
+      // If file was uploaded, process it and get URL
+      let imageUrl = req.body.imageUrl;
+      if (req.file) {
+        const fileInfo = saveFileInfo(req.file);
+        imageUrl = fileInfo.url;
+      }
+
+      // Parse FormData nested fields (when using multipart/form-data)
+      const floorPlanData: any = {
+        name: req.body.name,
+        dimensions: {
+          width: parseFloat(req.body['dimensions.width'] || req.body.dimensions?.width || req.body.dimensions?.[0]?.width || 0),
+          height: parseFloat(req.body['dimensions.height'] || req.body.dimensions?.height || req.body.dimensions?.[0]?.height || 0),
+        },
+        imageUrl,
+        metadata: {
+          scale: req.body['metadata.scale'] || req.body.metadata?.scale ? parseFloat(req.body['metadata.scale'] || req.body.metadata.scale) : 10,
+        },
+      };
+
+      const floorPlan = await floorPlanService.createFloorPlan(req.params.id, req.user!.userId, floorPlanData);
       res.status(201).json({
         success: true,
         message: 'Floor plan created successfully',
@@ -246,7 +371,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -351,21 +476,32 @@ router.get(
       .optional()
       .isIn(['pending', 'approved', 'rejected'])
       .withMessage('Invalid status'),
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ]),
   async (req: AuthRequest, res, next) => {
     try {
-      const applications = await exhibitorApprovalService.listPendingApplications(
+      const result = await exhibitorApprovalService.listPendingApplications(
         req.params.id,
         req.user!.userId,
         req.user!.role,
         {
           status: req.query.status as 'pending' | 'approved' | 'rejected' | undefined,
+          page: req.query.page ? parseInt(req.query.page as string) : undefined,
+          limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
         }
       );
       res.status(200).json({
         success: true,
         data: {
-          applications,
+          applications: result.applications,
+          pagination: result.pagination,
         },
       });
     } catch (error) {
@@ -456,22 +592,18 @@ router.get(
       .isIn(['attendee-count', 'session-popularity', 'booth-traffic', 'engagement-rate'])
       .withMessage('Invalid metric type'),
   ]),
-  async (req: AuthRequest, res, next) => {
-    try {
-      const analytics = await analyticsService.getExpoAnalytics(
-        req.params.id,
-        req.user!.userId,
-        req.user!.role,
-        req.query.metricType as string
-      );
-      res.status(200).json({
-        success: true,
-        data: analytics,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+  asyncHandler(async (req: AuthRequest, res) => {
+    const analytics = await analyticsService.getExpoAnalytics(
+      req.params.id,
+      req.user!.userId,
+      req.user!.role,
+      req.query.metricType as string
+    );
+    res.status(200).json({
+      success: true,
+      data: analytics,
+    });
+  })
 );
 
 /**

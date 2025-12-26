@@ -4,12 +4,11 @@
  * Implements FR-023, FR-024, T162, T165, T166
  */
 
-import { Message, IMessage } from '../models/Message';
+import { Message } from '../models/Message';
 import { User } from '../models/User';
 import { ExpoEvent } from '../models/ExpoEvent';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
-import * as emailService from './emailService';
 import { broadcastToUser } from './realtime';
 
 export interface SendMessageInput {
@@ -173,8 +172,8 @@ export async function sendMessage(
 }
 
 /**
- * Get messages for a user (inbox or sent)
- * Implements T162
+ * Get messages for a user (inbox or sent) with pagination
+ * Implements T162, T237
  */
 export async function getMessages(
   userId: string,
@@ -182,38 +181,77 @@ export async function getMessages(
     type?: 'inbox' | 'sent';
     context?: string;
     relatedExpoId?: string;
+    page?: number;
     limit?: number;
-    offset?: number;
+    conversationWith?: string; // Get messages between current user and this user
+    beforeTimestamp?: string; // Get messages before this timestamp (for pagination)
   }
-): Promise<MessageDetail[]> {
+): Promise<{
+  messages: MessageDetail[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
   try {
-    const { type = 'inbox', context, relatedExpoId, limit = 50, offset = 0 } = options || {};
+    const limit = Math.min(options?.limit || 20, 100); // Max 100 items per page, default 20
+    const page = options?.page || 1;
+    // Only use skip if beforeTimestamp is not provided (for cursor-based pagination)
+    const skip = options?.beforeTimestamp ? 0 : (page - 1) * limit;
 
     let query: any = {};
 
-    if (type === 'inbox') {
+    // If conversationWith is provided, get messages between current user and that user
+    if (options?.conversationWith) {
+      query.$or = [
+        { sender: userId, recipient: options.conversationWith },
+        { sender: options.conversationWith, recipient: userId },
+      ];
+    } else if (options?.type === 'inbox') {
       query.recipient = userId;
     } else {
       query.sender = userId;
     }
 
-    if (context) {
-      query.context = context;
+    // If beforeTimestamp is provided, get messages before that timestamp (for infinite scroll)
+    if (options?.beforeTimestamp) {
+      query.timestamp = { $lt: new Date(options.beforeTimestamp) };
     }
 
-    if (relatedExpoId) {
-      query.relatedExpo = relatedExpoId;
+    if (options?.context) {
+      query.context = options.context;
     }
+
+    if (options?.relatedExpoId) {
+      query.relatedExpo = options.relatedExpoId;
+    }
+
+    // Get total count for pagination (only if not using cursor-based pagination)
+    const totalItems = options?.beforeTimestamp 
+      ? await Message.countDocuments(query) // Approximate count for cursor-based
+      : await Message.countDocuments(query);
 
     const messages = await Message.find(query)
       .populate('sender', 'email profile.firstName profile.lastName role')
       .populate('recipient', 'email profile.firstName profile.lastName')
       .populate('relatedExpo', 'title')
       .sort({ timestamp: -1 })
-      .limit(limit)
-      .skip(offset);
+      .skip(skip)
+      .limit(limit);
 
-    return messages.map((msg) => formatMessage(msg as any));
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      messages: messages.map((msg) => formatMessage(msg as any)),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
   } catch (error) {
     logger.error('Error in getMessages service:', error);
     throw new CustomError('Failed to retrieve messages', 500, 'GET_MESSAGES_ERROR');

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 import { ValidationError } from 'express-validator';
+import errorTracking from '../utils/errorTracking';
 
 /**
  * Custom application error class
@@ -42,17 +43,36 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  // Log error with context
-  logger.error('Error handler invoked', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    ip: req.ip,
-  });
-
   // Handle AppError (application errors)
   if (err instanceof AppError) {
+    // Log 404 errors (not found) at warn level since they're expected conditions
+    // Log other errors at error level
+    const isNotFound = err.statusCode === 404;
+    const logMethod = isNotFound ? logger.warn : logger.error;
+    
+    logMethod(isNotFound ? 'Resource not found' : 'Error handler invoked', {
+      error: err.message,
+      errorCode: err.errorCode,
+      statusCode: err.statusCode,
+      stack: isNotFound ? undefined : err.stack, // Don't log stack for 404s
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+    });
+
+    // Only capture non-404 exceptions in error tracking (T258)
+    if (!isNotFound) {
+      errorTracking.captureException(err, {
+        path: req.path,
+        method: req.method,
+        ip: req.ip,
+        userId: (req as any).user?.userId,
+        userRole: (req as any).user?.role,
+        requestId: (req as any).requestId,
+        environment: process.env.NODE_ENV,
+      });
+    }
+
     res.status(err.statusCode).json({
       success: false,
       message: err.message,
@@ -61,6 +81,26 @@ export function errorHandler(
     });
     return;
   }
+
+  // Log error with context for non-AppError exceptions
+  logger.error('Error handler invoked', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    ip: req.ip,
+  });
+
+  // Capture exception in error tracking service (T258)
+  errorTracking.captureException(err, {
+    path: req.path,
+    method: req.method,
+    ip: req.ip,
+    userId: (req as any).user?.userId,
+    userRole: (req as any).user?.role,
+    requestId: (req as any).requestId,
+    environment: process.env.NODE_ENV,
+  });
 
   // Handle MongoDB/Mongoose errors
   if (err.name === 'ValidationError' && (err as any).errors) {

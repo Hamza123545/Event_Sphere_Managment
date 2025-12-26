@@ -7,6 +7,11 @@
 import { List, ListItem, ListItemButton, ListItemText, Chip, Avatar, Box, Typography, Divider } from '@mui/material';
 import { Email, Draft, CheckCircle } from '@mui/icons-material';
 import type { Message } from '../../types/messaging';
+import {
+  GlassCard,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface MessageListProps {
   messages: Message[];
@@ -52,117 +57,152 @@ export default function MessageList({ messages, onMessageClick, selectedMessageI
     return name.substring(0, 2).toUpperCase();
   };
 
+  const getContextColorValue = (context: string) => {
+    switch (context) {
+      case 'exhibitor-collaboration':
+        return activeTheme.accent;
+      case 'support-request':
+        return activeTheme.warning;
+      case 'organizer-communication':
+        return activeTheme.info;
+      default:
+        return activeTheme.textSecondary;
+    }
+  };
+
   if (messages.length === 0) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          No messages found
-        </Typography>
-      </Box>
+      <GlassCard>
+        <Box sx={{ p: 6, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
+            No messages found
+          </Typography>
+        </Box>
+      </GlassCard>
     );
   }
 
   return (
-    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+    <List sx={{ width: '100%' }}>
       {messages.map((message, index) => (
-        <Box key={message.messageId}>
-          <ListItem
-            disablePadding
-            secondaryAction={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip
-                  label={message.context.replace('-', ' ')}
-                  size="small"
-                  color={getContextColor(message.context)}
-                  variant="outlined"
-                />
-                {message.isRead && (
-                  <CheckCircle fontSize="small" color="action" sx={{ fontSize: 16 }} />
-                )}
-              </Box>
-            }
-          >
-            <ListItemButton
-              selected={selectedMessageId === message.messageId}
-              onClick={() => onMessageClick(message)}
-              sx={{
-                py: 1.5,
-                borderLeft: selectedMessageId === message.messageId ? '3px solid' : 'none',
-                borderColor: 'primary.main',
-                bgcolor: selectedMessageId === message.messageId ? 'action.selected' : 'transparent',
-              }}
+        <MotionBox
+          key={message.messageId}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: index * 0.05 }}
+        >
+          <GlassCard sx={{ mb: 2, p: 0, overflow: 'hidden' }}>
+            <ListItem
+              disablePadding
+              secondaryAction={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+                  <Chip
+                    label={message.context.replace('-', ' ')}
+                    size="small"
+                    sx={{
+                      bgcolor: `${getContextColorValue(message.context)}20`,
+                      color: getContextColorValue(message.context),
+                      border: `1px solid ${getContextColorValue(message.context)}30`,
+                      fontWeight: 600
+                    }}
+                  />
+                  {message.isRead && (
+                    <CheckCircle sx={{ fontSize: 18, color: activeTheme.success }} />
+                  )}
+                </Box>
+              }
             >
-              <Avatar
+              <ListItemButton
+                selected={selectedMessageId === message.messageId}
+                onClick={() => onMessageClick(message)}
                 sx={{
-                  mr: 2,
-                  bgcolor: message.isRead ? 'action.disabledBackground' : 'primary.main',
-                  width: 40,
-                  height: 40,
+                  py: 2,
+                  px: 2,
+                  borderLeft: selectedMessageId === message.messageId ? `4px solid ${activeTheme.accent}` : 'none',
+                  bgcolor: selectedMessageId === message.messageId ? activeTheme.surface : 'transparent',
+                  '&:hover': {
+                    bgcolor: activeTheme.surfaceLight,
+                  },
                 }}
               >
-                {getInitials(message.sender.name)}
-              </Avatar>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: message.isRead ? 'normal' : 'bold',
-                        flex: 1,
-                      }}
-                    >
-                      {message.sender.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatTimestamp(message.timestamp)}
-                    </Typography>
-                  </Box>
-                }
-                secondary={
-                  <Box>
-                    {message.subject && (
+                <Avatar
+                  sx={{
+                    mr: 2,
+                    bgcolor: message.isRead ? activeTheme.surfaceLight : activeTheme.accent,
+                    color: message.isRead ? activeTheme.textSecondary : activeTheme.textPrimary,
+                    width: 48,
+                    height: 48,
+                    border: `2px solid ${message.isRead ? activeTheme.border : activeTheme.accentGlow}`,
+                    fontWeight: 700
+                  }}
+                >
+                  {getInitials(message.sender.name)}
+                </Avatar>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: message.isRead ? 600 : 800,
+                          flex: 1,
+                          color: activeTheme.textPrimary,
+                        }}
+                      >
+                        {message.sender.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
+                        {formatTimestamp(message.timestamp)}
+                      </Typography>
+                    </Box>
+                  }
+                  secondary={
+                    <Box>
+                      {message.subject && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: message.isRead ? 600 : 700,
+                            mb: 0.5,
+                            color: activeTheme.textPrimary,
+                          }}
+                        >
+                          {message.subject}
+                        </Typography>
+                      )}
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: message.isRead ? 'normal' : 'medium',
-                          mb: 0.5,
+                          color: activeTheme.textSecondary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: 1.6,
                         }}
                       >
-                        {message.subject}
+                        {message.content}
                       </Typography>
-                    )}
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {message.content}
-                    </Typography>
-                  </Box>
-                }
-              />
-              {!message.isRead && (
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    bgcolor: 'primary.main',
-                    ml: 1,
-                  }}
+                    </Box>
+                  }
                 />
-              )}
-            </ListItemButton>
-          </ListItem>
-          {index < messages.length - 1 && <Divider />}
-        </Box>
+                {!message.isRead && (
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: activeTheme.accent,
+                      ml: 1,
+                      boxShadow: `0 0 8px ${activeTheme.accentGlow}`,
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </ListItem>
+          </GlassCard>
+        </MotionBox>
       ))}
     </List>
   );

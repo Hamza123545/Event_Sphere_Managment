@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   FormControl,
   InputLabel,
@@ -22,6 +21,10 @@ import {
 } from '@mui/material';
 import { Send } from '@mui/icons-material';
 import type { FeedbackSubmission, FeedbackStatus } from '../../types/feedback';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface RespondToFeedbackDialogProps {
   open: boolean;
@@ -78,33 +81,69 @@ export default function RespondToFeedbackDialog({
   if (!feedback) return null;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Respond to Feedback</DialogTitle>
-      <DialogContent dividers>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+        Respond to Feedback
+      </DialogTitle>
+      <DialogContent dividers sx={{ bgcolor: activeTheme.surface }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" gutterBottom sx={{ color: activeTheme.textSecondary, fontWeight: 700 }}>
             Subject:
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 3, color: activeTheme.textPrimary, fontWeight: 600 }}>
             {feedback.subject}
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ color: activeTheme.textSecondary, fontWeight: 700 }}>
             Original Message:
           </Typography>
-          <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap', bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>
+          <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap', bgcolor: activeTheme.surfaceLight, p: 2, borderRadius: 2, border: `1px solid ${activeTheme.border}`, color: activeTheme.textSecondary, lineHeight: 1.7 }}>
             {feedback.message}
           </Typography>
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3,
+              bgcolor: `${activeTheme.error}20`,
+              border: `1px solid ${activeTheme.error}30`,
+              color: activeTheme.textPrimary
+            }} 
+            onClose={() => setError(null)}
+          >
             {error}
           </Alert>
         )}
 
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Status</InputLabel>
-          <Select value={status} label="Status" onChange={(e) => setStatus(e.target.value as FeedbackStatus)}>
+        <FormControl fullWidth sx={{ mb: 3 }}>
+          <InputLabel sx={{ color: activeTheme.textSecondary }}>Status</InputLabel>
+          <Select 
+            value={status} 
+            label="Status" 
+            onChange={(e) => setStatus(e.target.value as FeedbackStatus)}
+            sx={{
+              bgcolor: activeTheme.surfaceLight,
+              color: activeTheme.textPrimary,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: activeTheme.border,
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: activeTheme.accent,
+              },
+            }}
+          >
             <MenuItem value="pending">Pending</MenuItem>
             <MenuItem value="reviewed">Reviewed</MenuItem>
             <MenuItem value="resolved">Resolved</MenuItem>
@@ -122,20 +161,35 @@ export default function RespondToFeedbackDialog({
           rows={6}
           inputProps={{ maxLength: 5000 }}
           helperText={`${response.length}/5000 characters`}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              bgcolor: activeTheme.surfaceLight,
+              color: activeTheme.textPrimary,
+              '& fieldset': {
+                borderColor: activeTheme.border,
+              },
+              '&:hover fieldset': {
+                borderColor: activeTheme.accent,
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: activeTheme.textSecondary,
+            },
+          }}
         />
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isLoading}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={handleClose} disabled={isLoading}>
           Cancel
-        </Button>
-        <Button
+        </ActionButton>
+        <ActionButton
           onClick={handleSubmit}
-          variant="contained"
+          primary
           startIcon={<Send />}
           disabled={isLoading || !response.trim()}
         >
           {isLoading ? 'Sending...' : 'Send Response'}
-        </Button>
+        </ActionButton>
       </DialogActions>
     </Dialog>
   );

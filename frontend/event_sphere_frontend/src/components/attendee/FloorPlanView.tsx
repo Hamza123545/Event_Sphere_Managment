@@ -4,9 +4,16 @@
  * Implements T111: User Story 3
  */
 
-import { Box, Paper, Typography, Alert, Button } from '@mui/material';
+import { Box, Typography, Alert } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type { ExhibitorSearchResult } from '../../types/attendee';
+import {
+  GlassCard,
+  GlassContainer,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface FloorPlanViewProps {
   floorPlan: {
@@ -30,31 +37,32 @@ interface FloorPlanViewProps {
 export default function FloorPlanView({ floorPlan, exhibitors = [], onBoothClick }: FloorPlanViewProps) {
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" gutterBottom>
+      <GlassCard sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
           {floorPlan.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Dimensions: {floorPlan.dimensions.width}m × {floorPlan.dimensions.height}m
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Total Booths: {floorPlan.metadata.totalBooths} • Available: {floorPlan.metadata.availableBooths}
-        </Typography>
-      </Paper>
+        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 700, display: 'block', mb: 0.5 }}>
+              DIMENSIONS
+            </Typography>
+            <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
+              {floorPlan.dimensions.width}m × {floorPlan.dimensions.height}m
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 700, display: 'block', mb: 0.5 }}>
+              BOOTHS
+            </Typography>
+            <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
+              Total: {floorPlan.metadata.totalBooths} • Available: {floorPlan.metadata.availableBooths}
+            </Typography>
+          </Box>
+        </Box>
+      </GlassCard>
 
       {floorPlan.imageUrl ? (
-        <Box
-          sx={{
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 1,
-            overflow: 'hidden',
-            bgcolor: 'action.hover',
-            position: 'relative',
-            minHeight: 400,
-            mb: 3,
-          }}
-        >
+        <GlassContainer sx={{ mb: 4, p: 0, overflow: 'hidden' }}>
           <Box
             component="img"
             src={floorPlan.imageUrl}
@@ -66,35 +74,48 @@ export default function FloorPlanView({ floorPlan, exhibitors = [], onBoothClick
             }}
           />
           {/* Note: For interactive floor plan, you would overlay clickable booth areas here */}
-        </Box>
+        </GlassContainer>
       ) : (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Floor plan image not available. Please check back later.
-        </Alert>
+        <GlassCard sx={{ mb: 4 }}>
+          <Alert 
+            severity="info" 
+            sx={{ 
+              bgcolor: `${activeTheme.info}20`,
+              border: `1px solid ${activeTheme.info}30`,
+              color: activeTheme.textPrimary
+            }}
+          >
+            Floor plan image not available. Please check back later.
+          </Alert>
+        </GlassCard>
       )}
 
       {/* Exhibitor Booths List */}
       {exhibitors.length > 0 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
+        <GlassCard>
+          <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
             Exhibitor Booths
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             {exhibitors
               .filter((ex) => ex.booth)
-              .map((exhibitor) => (
-                <Button
+              .map((exhibitor, index) => (
+                <MotionBox
                   key={exhibitor.profileId}
-                  variant="outlined"
-                  startIcon={<LocationOn />}
-                  onClick={() => onBoothClick?.(exhibitor.profileId)}
-                  sx={{ mb: 1 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  {exhibitor.companyName} - Booth {exhibitor.booth?.identifier}
-                </Button>
+                  <ActionButton
+                    startIcon={<LocationOn />}
+                    onClick={() => onBoothClick?.(exhibitor.profileId)}
+                  >
+                    {exhibitor.companyName} - Booth {exhibitor.booth?.identifier}
+                  </ActionButton>
+                </MotionBox>
               ))}
           </Box>
-        </Paper>
+        </GlassCard>
       )}
     </Box>
   );

@@ -27,9 +27,19 @@ import { asyncHandler } from '../middleware/errorHandler';
 
 const router: ExpressRouter = Router();
 
-// All routes require authentication and exhibitor role
+// All routes require authentication
 router.use(requireAuth);
-router.use(requireRole('exhibitor'));
+
+// Most routes require exhibitor role, but messaging routes allow organizers/admins too
+// Apply exhibitor role requirement to all routes except messaging
+router.use((req: Request, res: Response, next: NextFunction) => {
+  // Allow messaging routes for organizers/admins too
+  if (req.path.startsWith('/messages')) {
+    requireRole('admin', 'organizer', 'exhibitor')(req as AuthRequest, res, next);
+  } else {
+    requireRole('exhibitor')(req as AuthRequest, res, next);
+  }
+});
 
 /**
  * Browse available expos
@@ -107,8 +117,29 @@ router.post(
   validate([
     body('companyName').trim().isLength({ min: 2, max: 200 }).withMessage('Company name must be 2-200 characters'),
     body('description').trim().isLength({ min: 20, max: 2000 }).withMessage('Description must be 20-2000 characters'),
-    body('productsServices').isArray({ min: 1 }).withMessage('At least one product/service is required'),
-    body('productsServices.*').trim().notEmpty().withMessage('Product/service cannot be empty'),
+    body('productsServices')
+      .custom((value) => {
+        // Handle array format
+        if (Array.isArray(value)) {
+          const validItems = value.filter((item) => item && String(item).trim().length > 0);
+          return validItems.length > 0;
+        }
+        // Handle JSON string format (from FormData)
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+              const validItems = parsed.filter((item) => item && String(item).trim().length > 0);
+              return validItems.length > 0;
+            }
+          } catch {
+            // If it's not JSON, treat as single string
+            return value && value.trim().length > 0;
+          }
+        }
+        return false;
+      })
+      .withMessage('At least one product/service is required'),
     body('category').trim().notEmpty().withMessage('Category is required'),
     body('contactEmail').trim().isEmail().withMessage('Invalid email format'),
     body('contactPhone').optional().trim(),
@@ -380,22 +411,27 @@ router.get(
       .withMessage('Invalid context'),
     query('type').optional().isIn(['inbox', 'sent']).withMessage('Type must be inbox or sent'),
     query('relatedExpoId').optional().isMongoId().withMessage('Invalid related expo ID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('offset').optional().isInt({ min: 0 }).withMessage('Offset must be non-negative'),
+    query('conversationWith').optional().isMongoId().withMessage('Invalid conversation user ID'),
+    query('beforeTimestamp').optional().isISO8601().withMessage('Invalid timestamp format'),
   ]),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const messages = await messagingService.getMessages(req.user!.userId, {
+    const result = await messagingService.getMessages(req.user!.userId, {
       type: (req.query.type as 'inbox' | 'sent') || 'inbox',
       context: req.query.context as string,
       relatedExpoId: req.query.relatedExpoId as string,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-      offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
+      conversationWith: req.query.conversationWith as string,
+      beforeTimestamp: req.query.beforeTimestamp as string,
     });
 
     res.json({
       success: true,
       data: {
-        messages,
+        messages: result.messages,
+        pagination: result.pagination,
       },
     });
   })

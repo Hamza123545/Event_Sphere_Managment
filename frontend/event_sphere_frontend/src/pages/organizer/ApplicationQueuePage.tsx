@@ -7,26 +7,29 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
   Tabs,
   Tab,
   Badge,
-  Button,
+  Alert,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useApprovalStore } from '../../stores/approvalStore';
 import { useExpoStore } from '../../stores/expoStore';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassContainer,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 import ApplicationCard from '../../components/organizer/ApplicationCard';
 import ReviewApplicationDialog from '../../components/organizer/ReviewApplicationDialog';
 import type { ExhibitorApplication } from '../../types/approval';
@@ -34,21 +37,6 @@ import { parseApiError } from '../../utils/errorHandler';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div role="tabpanel" hidden={value !== index} id={`status-tabpanel-${index}`} {...other}>
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
 
 export default function ApplicationQueuePage() {
   const { expoId } = useParams<{ expoId: string }>();
@@ -104,13 +92,18 @@ export default function ApplicationQueuePage() {
       // Reload applications to update the list
       const status = statusFilter === 'all' ? undefined : statusFilter;
       await listApplications(expoId, status);
-    } catch (error: any) {
-      setActionError(parseApiError(error));
+    } catch (err: unknown) {
+      setActionError(parseApiError(err));
     }
   };
 
-  const handleReject = async (application: ExhibitorApplication, reason: string) => {
+  const handleReject = async (application: ExhibitorApplication, reason?: string) => {
     if (!expoId) return;
+    // If no reason provided, open review dialog instead
+    if (!reason) {
+      handleReview(application);
+      return;
+    }
     setActionError(null);
     try {
       await rejectExhibitor(expoId, application.profileId, reason);
@@ -118,8 +111,8 @@ export default function ApplicationQueuePage() {
       // Reload applications to update the list
       const status = statusFilter === 'all' ? undefined : statusFilter;
       await listApplications(expoId, status);
-    } catch (error: any) {
-      setActionError(parseApiError(error));
+    } catch (err: unknown) {
+      setActionError(parseApiError(err));
     }
   };
 
@@ -146,50 +139,75 @@ export default function ApplicationQueuePage() {
 
   if (!expoId) {
     return (
-      <Container>
-        <Alert severity="error">Invalid expo ID</Alert>
-      </Container>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
+          <Alert severity="error" sx={{ bgcolor: `${activeTheme.error}20`, border: `1px solid ${activeTheme.error}30` }}>
+            Invalid expo ID
+          </Alert>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box>
-      <AppBar title={selectedExpo?.title || 'Application Queue'} />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
         {/* Header */}
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
-              Back
-            </Button>
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Exhibitor Applications
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}
+        >
+          <ActionButton startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
+            Back
+          </ActionButton>
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: '-2px', mb: 0.5 }}>
+              Exhibitor Applications
+            </Typography>
+            {selectedExpo && (
+              <Typography variant="body1" sx={{ color: activeTheme.textSecondary }}>
+                {selectedExpo.title}
               </Typography>
-              {selectedExpo && (
-                <Typography variant="body2" color="text.secondary">
-                  {selectedExpo.title}
-                </Typography>
-              )}
-            </Box>
+            )}
           </Box>
-        </Box>
+        </MotionBox>
 
         {/* Error Alert */}
         {(error || actionError) && (
-          <ErrorAlert
-            message={error || actionError || 'An error occurred'}
-            onClose={() => {
-              clearError();
-              setActionError(null);
-            }}
-            sx={{ mb: 3 }}
-          />
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert
+              message={error || actionError || 'An error occurred'}
+              onClose={() => {
+                clearError();
+                setActionError(null);
+              }}
+            />
+          </Box>
         )}
 
         {/* Status Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
+        <GlassContainer sx={{ mb: 4 }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange}
+            sx={{
+              '& .MuiTab-root': {
+                color: activeTheme.textSecondary,
+                fontWeight: 600,
+                '&.Mui-selected': {
+                  color: activeTheme.accent,
+                },
+              },
+              '& .MuiTabs-indicator': {
+                bgcolor: activeTheme.accent,
+              },
+            }}
+          >
             <Tab label="All" />
             <Tab
               label={
@@ -213,27 +231,43 @@ export default function ApplicationQueuePage() {
               }
             />
           </Tabs>
-        </Box>
+        </GlassContainer>
 
         {/* Loading Spinner */}
-        {isLoading && <LoadingSpinner />}
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
+        )}
 
         {/* Applications Grid */}
         {!isLoading && (
           <>
             {getApplicationsForTab().length === 0 ? (
-              <Alert severity="info">No applications found for the selected filter.</Alert>
+              <GlassCard>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <Typography sx={{ color: activeTheme.textSecondary }}>
+                    No applications found for the selected filter.
+                  </Typography>
+                </Box>
+              </GlassCard>
             ) : (
               <Grid container spacing={3}>
-                {getApplicationsForTab().map((application) => (
+                {getApplicationsForTab().map((application, index) => (
                   <Grid item xs={12} sm={6} md={4} key={application.profileId}>
-                    <ApplicationCard
-                      application={application}
-                      onReview={handleReview}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      isLoading={isLoading}
-                    />
+                    <MotionBox
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <ApplicationCard
+                        application={application}
+                        onReview={handleReview}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        isLoading={isLoading}
+                      />
+                    </MotionBox>
                   </Grid>
                 ))}
               </Grid>
@@ -254,8 +288,8 @@ export default function ApplicationQueuePage() {
           onReject={handleReject}
           isLoading={isLoading}
         />
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

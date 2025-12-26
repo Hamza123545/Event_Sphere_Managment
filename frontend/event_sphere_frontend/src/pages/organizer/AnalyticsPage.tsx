@@ -7,7 +7,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
   Grid,
@@ -15,16 +14,23 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button,
-  Paper,
   Alert,
 } from '@mui/material';
 import { ArrowBack, GetApp, People, Event, Storefront, TrendingUp } from '@mui/icons-material';
 import { useAnalyticsStore } from '../../stores/analyticsStore';
 import { useExpoStore } from '../../stores/expoStore';
-import AppBar from '../../components/common/AppBar';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassContainer,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 import MetricCard from '../../components/organizer/MetricCard';
 import SessionPopularityChart from '../../components/organizer/SessionPopularityChart';
 import AttendeeCountWidget from '../../components/organizer/AttendeeCountWidget';
@@ -73,47 +79,65 @@ export default function AnalyticsPage() {
 
   if (!expoId) {
     return (
-      <>
-        <AppBar title="Analytics Dashboard" />
-        <Container>
-          <Alert severity="error">Invalid expo ID</Alert>
-        </Container>
-      </>
+      <PageContainer>
+        <ModernNavbar />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
+          <Alert severity="error" sx={{ bgcolor: `${activeTheme.error}20`, border: `1px solid ${activeTheme.error}30` }}>
+            Invalid expo ID
+          </Alert>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Analytics Dashboard" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
         {/* Header */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
+        >
           <Box>
-            <Button startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 1 }}>
+            <ActionButton startIcon={<ArrowBack />} onClick={() => navigate('/organizer')} sx={{ mb: 2 }}>
               Back to Dashboard
-            </Button>
-            <Typography variant="h4" component="h1">
+            </ActionButton>
+            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: '-2px' }}>
               Analytics: {selectedExpo?.title || 'Loading...'}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
+          <ActionButton
+            primary
             startIcon={<GetApp />}
             onClick={() => setExportDialogOpen(true)}
             disabled={!analytics}
           >
             Export Report
-          </Button>
-        </Box>
+          </ActionButton>
+        </MotionBox>
 
         {/* Filter Controls */}
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <GlassContainer sx={{ p: 3, mb: 4 }}>
           <FormControl sx={{ minWidth: 250 }}>
-            <InputLabel>Filter by Metric Type</InputLabel>
+            <InputLabel sx={{ color: activeTheme.textSecondary }}>Filter by Metric Type</InputLabel>
             <Select
               value={metricFilter}
               label="Filter by Metric Type"
               onChange={(e) => handleMetricFilterChange(e.target.value as MetricType)}
+              sx={{
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.accent,
+                },
+              }}
             >
               <MenuItem value="all">All Metrics</MenuItem>
               <MenuItem value="attendee-count">Attendee Count</MenuItem>
@@ -122,17 +146,21 @@ export default function AnalyticsPage() {
               <MenuItem value="engagement-rate">Engagement Rate</MenuItem>
             </Select>
           </FormControl>
-        </Paper>
+        </GlassContainer>
 
         {/* Error Alert */}
         {error && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 4 }}>
             <ErrorAlert message={error} onClose={clearError} severity="error" />
           </Box>
         )}
 
         {/* Loading Spinner */}
-        {isLoading && !analytics && <LoadingSpinner />}
+        {isLoading && !analytics && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
+        )}
 
         {/* Analytics Content */}
         {!isLoading && analytics && (
@@ -240,30 +268,32 @@ export default function AnalyticsPage() {
 
               {analytics.boothTraffic && !analytics.attendeeCount && (
                 <Grid item xs={12}>
-                  <Paper sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom>
+                  <GlassCard>
+                    <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
                       Booth Traffic Summary
                     </Typography>
-                    <Typography variant="body1">
-                      Total Booths: {analytics.boothTraffic.totalBooths}
-                    </Typography>
-                    <Typography variant="body1">
-                      Reserved: {analytics.boothTraffic.reservedBooths}
-                    </Typography>
-                    <Typography variant="body1">
-                      Available: {analytics.boothTraffic.availableBooths}
-                    </Typography>
-                    <Typography variant="body1">
-                      Occupancy Rate: {analytics.boothTraffic.occupancyRate}%
-                    </Typography>
-                  </Paper>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography variant="body1" sx={{ color: activeTheme.textSecondary }}>
+                        Total Booths: <span style={{ color: activeTheme.textPrimary, fontWeight: 600 }}>{analytics.boothTraffic.totalBooths}</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: activeTheme.textSecondary }}>
+                        Reserved: <span style={{ color: activeTheme.textPrimary, fontWeight: 600 }}>{analytics.boothTraffic.reservedBooths}</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: activeTheme.textSecondary }}>
+                        Available: <span style={{ color: activeTheme.textPrimary, fontWeight: 600 }}>{analytics.boothTraffic.availableBooths}</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: activeTheme.textSecondary }}>
+                        Occupancy Rate: <span style={{ color: activeTheme.accent, fontWeight: 600 }}>{analytics.boothTraffic.occupancyRate}%</span>
+                      </Typography>
+                    </Box>
+                  </GlassCard>
                 </Grid>
               )}
             </Grid>
 
             {/* Generated At */}
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
+              <Typography variant="caption" sx={{ color: activeTheme.textSecondary }}>
                 Report generated: {new Date(analytics.generatedAt).toLocaleString()}
               </Typography>
             </Box>
@@ -278,8 +308,8 @@ export default function AnalyticsPage() {
           isLoading={isLoading}
           expoTitle={selectedExpo?.title}
         />
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

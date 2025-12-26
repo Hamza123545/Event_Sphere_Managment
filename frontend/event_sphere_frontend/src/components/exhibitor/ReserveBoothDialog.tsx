@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
   Alert,
   Box,
   Typography,
@@ -18,6 +17,10 @@ import {
 } from '@mui/material';
 import { Business } from '@mui/icons-material';
 import type { BoothDetails } from '../../types/exhibitor';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface ReserveBoothDialogProps {
   open: boolean;
@@ -43,53 +46,86 @@ export default function ReserveBoothDialog({
   const isConcurrentError = error?.includes('409') || error?.toLowerCase().includes('concurrent');
 
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>Reserve Booth {booth.identifier}</DialogTitle>
-      <DialogContent>
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+        Reserve Booth {booth.identifier}
+      </DialogTitle>
+      <DialogContent sx={{ bgcolor: activeTheme.surface }}>
         {error && (
-          <Alert severity={isConcurrentError ? 'warning' : 'error'} sx={{ mb: 2 }}>
+          <Alert 
+            severity={isConcurrentError ? 'warning' : 'error'} 
+            sx={{ 
+              mb: 3,
+              bgcolor: isConcurrentError ? `${activeTheme.warning}20` : `${activeTheme.error}20`,
+              border: `1px solid ${isConcurrentError ? activeTheme.warning : activeTheme.error}30`,
+              color: activeTheme.textPrimary
+            }}
+          >
             {isConcurrentError
               ? 'This booth was just reserved by another exhibitor. Please select a different booth.'
               : error}
           </Alert>
         )}
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Business color="primary" />
-          <Typography variant="h6">Booth Details</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+          <Business sx={{ color: activeTheme.accent, fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 800, color: activeTheme.textPrimary }}>
+            Booth Details
+          </Typography>
         </Box>
 
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            <strong>Identifier:</strong> {booth.identifier}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textSecondary }}>
+            <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Identifier:</span> {booth.identifier}
           </Typography>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            <strong>Size:</strong> {booth.size.width}m × {booth.size.height}m ({booth.size.area}m²)
+          <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textSecondary }}>
+            <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Size:</span> {booth.size.width}m × {booth.size.height}m ({booth.size.area}m²)
           </Typography>
           {booth.priceTier && (
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Price Tier:</strong> <Chip label={booth.priceTier} size="small" />
+            <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textSecondary }}>
+              <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Price Tier:</span>{' '}
+              <Chip 
+                label={booth.priceTier} 
+                size="small"
+                sx={{
+                  bgcolor: `${activeTheme.accent}20`,
+                  color: activeTheme.accent,
+                  border: `1px solid ${activeTheme.accent}30`,
+                  fontWeight: 600
+                }}
+              />
             </Typography>
           )}
           {booth.amenities.length > 0 && (
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Amenities:</strong> {booth.amenities.join(', ')}
+            <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textSecondary }}>
+              <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Amenities:</span> {booth.amenities.join(', ')}
             </Typography>
           )}
         </Box>
 
-        <DialogContentText>
+        <DialogContentText sx={{ color: activeTheme.textSecondary, lineHeight: 1.7 }}>
           Are you sure you want to reserve this booth? Once reserved, you'll be able to manage your booth details
           and showcase your products.
         </DialogContentText>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel} disabled={isLoading}>
+      <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={onCancel} disabled={isLoading}>
           Cancel
-        </Button>
-        <Button onClick={onConfirm} variant="contained" disabled={isLoading}>
+        </ActionButton>
+        <ActionButton onClick={onConfirm} primary disabled={isLoading}>
           {isLoading ? <CircularProgress size={24} /> : 'Reserve Booth'}
-        </Button>
+        </ActionButton>
       </DialogActions>
     </Dialog>
   );

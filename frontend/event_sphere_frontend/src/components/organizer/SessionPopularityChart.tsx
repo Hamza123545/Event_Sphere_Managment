@@ -4,7 +4,7 @@
  * Implements T189
  */
 
-import { Paper, Typography, Box } from '@mui/material';
+import { Typography, Box } from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -16,6 +16,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { SessionPopularityMetrics } from '../../types/analytics';
+import {
+  GlassCard,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface SessionPopularityChartProps {
   data: SessionPopularityMetrics;
@@ -36,23 +40,22 @@ export default function SessionPopularityChart({ data }: SessionPopularityChartP
       return (
         <Box
           sx={{
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 1,
+            bgcolor: activeTheme.surface,
+            border: `1px solid ${activeTheme.border}`,
+            borderRadius: 2,
+            p: 2,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: activeTheme.textPrimary }}>
             {payload[0].payload.fullName}
           </Typography>
-          <Typography variant="body2" color="primary">
+          <Typography variant="body2" sx={{ color: activeTheme.accent, fontWeight: 700 }}>
             Registrations: {payload[0].value}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
             Capacity: {payload[0].payload.capacity}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 600 }}>
             Utilization: {payload[0].payload.utilizationRate.toFixed(1)}%
           </Typography>
         </Box>
@@ -63,48 +66,48 @@ export default function SessionPopularityChart({ data }: SessionPopularityChartP
 
   if (data.sessions.length === 0) {
     return (
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
+      <GlassCard>
+        <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
           Session Popularity
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
           No session data available
         </Typography>
-      </Paper>
+      </GlassCard>
     );
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
+    <GlassCard>
+      <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: activeTheme.textPrimary }}>
         Top Sessions by Registrations
       </Typography>
-      <Box sx={{ width: '100%', height: 400, mt: 2 }}>
-        <ResponsiveContainer>
+      <Box sx={{ width: '100%', height: 400, mt: 2, minHeight: 400 }}>
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" stroke={activeTheme.border} />
             <XAxis
               dataKey="name"
               angle={-45}
               textAnchor="end"
               height={100}
               interval={0}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: activeTheme.textSecondary }}
             />
-            <YAxis />
+            <YAxis tick={{ fill: activeTheme.textSecondary }} />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar dataKey="registrations" fill="#1976d2" name="Registrations" />
-            <Bar dataKey="capacity" fill="#9e9e9e" name="Capacity" />
+            <Bar dataKey="registrations" fill={activeTheme.accent} name="Registrations" />
+            <Bar dataKey="capacity" fill={activeTheme.textSecondary} name="Capacity" />
           </BarChart>
         </ResponsiveContainer>
       </Box>
       {data.sessions.length > 10 && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+        <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600, mt: 2, display: 'block' }}>
           Showing top 10 sessions out of {data.sessions.length} total
         </Typography>
       )}
-    </Paper>
+    </GlassCard>
   );
 }
 

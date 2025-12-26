@@ -7,10 +7,8 @@
 import { useState, useEffect } from 'react';
 import {
   Popover,
-  Paper,
   Typography,
   Box,
-  Button,
   Divider,
   List,
   IconButton,
@@ -19,6 +17,10 @@ import {
 import { NotificationsOff, ClearAll } from '@mui/icons-material';
 import { useNotificationsStore } from '../../stores/notificationsStore';
 import NotificationItem from './NotificationItem';
+import {
+  GlassContainer,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface NotificationCenterProps {
   anchorEl: HTMLElement | null;
@@ -71,34 +73,46 @@ export default function NotificationCenter({ anchorEl, open, onClose }: Notifica
           maxWidth: '90vw',
           maxHeight: 600,
           mt: 1,
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
         },
       }}
     >
-      <Paper>
+      <GlassContainer sx={{ p: 0 }}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Notifications</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: activeTheme.textPrimary }}>
+            Notifications
+          </Typography>
           <Box>
             {unreadCount > 0 && (
               <Tooltip title="Mark all as read">
-                <IconButton size="small" onClick={handleMarkAllAsRead}>
+                <IconButton 
+                  size="small" 
+                  onClick={handleMarkAllAsRead}
+                  sx={{ color: activeTheme.accent }}
+                >
                   <ClearAll fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {notifications.length > 0 && (
               <Tooltip title="Clear all">
-                <IconButton size="small" onClick={handleClearAll}>
+                <IconButton 
+                  size="small" 
+                  onClick={handleClearAll}
+                  sx={{ color: activeTheme.textSecondary }}
+                >
                   <NotificationsOff fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
           </Box>
         </Box>
-        <Divider />
+        <Divider sx={{ borderColor: activeTheme.border }} />
         <List sx={{ maxHeight: 500, overflow: 'auto', p: 0 }}>
           {notifications.length === 0 ? (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
                 No notifications
               </Typography>
             </Box>
@@ -112,7 +126,7 @@ export default function NotificationCenter({ anchorEl, open, onClose }: Notifica
             ))
           )}
         </List>
-      </Paper>
+      </GlassContainer>
     </Popover>
   );
 }

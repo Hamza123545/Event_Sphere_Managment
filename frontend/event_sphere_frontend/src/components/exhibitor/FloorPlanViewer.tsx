@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Alert, Paper, Chip, Snackbar } from '@mui/material';
+import { Box, Typography, Grid, Alert, Chip, Snackbar } from '@mui/material';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import BoothCard from './BoothCard';
 import ReserveBoothDialog from './ReserveBoothDialog';
@@ -12,6 +12,11 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
 import { getSocket } from '../../services/socket';
 import type { BoothDetails } from '../../types/exhibitor';
+import {
+  GlassCard,
+  activeTheme,
+  SectionTitle,
+} from '../../theme/designSystem';
 
 interface FloorPlanViewerProps {
   expoId: string;
@@ -151,30 +156,61 @@ export default function FloorPlanViewer({ expoId, profileId }: FloorPlanViewerPr
         </Alert>
       </Snackbar>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" gutterBottom>
+      <GlassCard sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
           {floorPlan.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ color: activeTheme.textSecondary, mb: 3, fontWeight: 600 }}>
           Dimensions: {floorPlan.dimensions.width}m × {floorPlan.dimensions.height}m
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
-          <Chip label={`Total: ${floorPlan.metadata.totalBooths}`} />
-          <Chip label={`Available: ${floorPlan.metadata.availableBooths}`} color="success" />
-          <Chip label={`Reserved: ${reservedBooths.length}`} color="warning" />
-          <Chip label={`Occupied: ${occupiedBooths.length}`} />
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+          <Chip 
+            label={`Total: ${floorPlan.metadata.totalBooths}`}
+            sx={{
+              bgcolor: `${activeTheme.accent}20`,
+              color: activeTheme.accent,
+              border: `1px solid ${activeTheme.accent}30`,
+              fontWeight: 700
+            }}
+          />
+          <Chip 
+            label={`Available: ${floorPlan.metadata.availableBooths}`}
+            sx={{
+              bgcolor: `${activeTheme.success}20`,
+              color: activeTheme.success,
+              border: `1px solid ${activeTheme.success}30`,
+              fontWeight: 700
+            }}
+          />
+          <Chip 
+            label={`Reserved: ${reservedBooths.length}`}
+            sx={{
+              bgcolor: `${activeTheme.warning}20`,
+              color: activeTheme.warning,
+              border: `1px solid ${activeTheme.warning}30`,
+              fontWeight: 700
+            }}
+          />
+          <Chip 
+            label={`Occupied: ${occupiedBooths.length}`}
+            sx={{
+              bgcolor: `${activeTheme.accent}20`,
+              color: activeTheme.accent,
+              border: `1px solid ${activeTheme.accent}30`,
+              fontWeight: 700
+            }}
+          />
         </Box>
 
         {floorPlan.imageUrl && (
           <Box
             sx={{
-              mt: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 1,
+              mt: 3,
+              border: `2px solid ${activeTheme.border}`,
+              borderRadius: 2,
               overflow: 'hidden',
-              bgcolor: 'action.hover',
+              bgcolor: activeTheme.surfaceLight,
               position: 'relative',
               minHeight: 400,
             }}
@@ -192,14 +228,21 @@ export default function FloorPlanViewer({ expoId, profileId }: FloorPlanViewerPr
             {/* Note: For interactive floor plan, you would overlay clickable areas here */}
           </Box>
         )}
-      </Paper>
+      </GlassCard>
 
-      <Typography variant="h6" gutterBottom>
-        Available Booths ({availableBooths.length})
-      </Typography>
+      <SectionTitle>Available Booths ({availableBooths.length})</SectionTitle>
 
       {availableBooths.length === 0 ? (
-        <Alert severity="info">No available booths. All booths have been reserved or occupied.</Alert>
+        <Alert 
+          severity="info"
+          sx={{
+            bgcolor: `${activeTheme.info}20`,
+            border: `1px solid ${activeTheme.info}30`,
+            color: activeTheme.textPrimary
+          }}
+        >
+          No available booths. All booths have been reserved or occupied.
+        </Alert>
       ) : (
         <Grid container spacing={2} sx={{ mb: 4 }}>
           {availableBooths.map((booth) => (

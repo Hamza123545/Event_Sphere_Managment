@@ -7,10 +7,6 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
   Typography,
   TextField,
   FormControl,
@@ -19,13 +15,19 @@ import {
   MenuItem,
   Chip,
   Alert,
-  CircularProgress,
 } from '@mui/material';
 import { Add, Search } from '@mui/icons-material';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
 import type { ExpoSummary } from '../../types/expo';
+import {
+  GlassCard,
+  GlassContainer,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface ExpoDirectoryProps {
   onRegister: (expoId: string) => void;
@@ -66,86 +68,161 @@ export default function ExpoDirectory({ onRegister }: ExpoDirectoryProps) {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          placeholder="Search expos..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-          sx={{ flexGrow: 1, minWidth: 200 }}
-        />
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={statusFilter}
-            label="Status"
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="upcoming">Upcoming</MenuItem>
-            <MenuItem value="active">Active</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          placeholder="Category/Theme"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          sx={{ minWidth: 200 }}
-        />
-      </Box>
+      <GlassContainer sx={{ p: 3, mb: 4 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            placeholder="Search expos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ mr: 1, color: activeTheme.textSecondary }} />,
+            }}
+            sx={{ 
+              flexGrow: 1, 
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& fieldset': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: activeTheme.accent,
+                },
+              },
+            }}
+          />
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ color: activeTheme.textSecondary }}>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              sx={{
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.accent,
+                },
+              }}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="upcoming">Upcoming</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            placeholder="Category/Theme"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            sx={{ 
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: activeTheme.surface,
+                color: activeTheme.textPrimary,
+                '& fieldset': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: activeTheme.accent,
+                },
+              },
+            }}
+          />
+        </Box>
+      </GlassContainer>
 
       {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
 
       {isLoading && availableExpos.length === 0 ? (
         <LoadingSpinner />
       ) : filteredExpos.length === 0 ? (
-        <Alert severity="info">No expos found matching your criteria.</Alert>
+        <GlassCard>
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography sx={{ color: activeTheme.textSecondary }}>
+              No expos found matching your criteria.
+            </Typography>
+          </Box>
+        </GlassCard>
       ) : (
         <Grid container spacing={3}>
-          {filteredExpos.map((expo: ExpoSummary) => (
+          {filteredExpos.map((expo: ExpoSummary, index: number) => (
             <Grid item xs={12} sm={6} md={4} key={expo.expoId}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                    <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', flex: 1 }}>
-                      {expo.title}
-                    </Typography>
-                    <Chip label={expo.status} color="primary" size="small" sx={{ ml: 1 }} />
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+              >
+                <GlassCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 0, overflow: 'hidden' }}>
+                  {/* Expo Image */}
+                  {expo.imageUrl && (
+                    <Box
+                      component="img"
+                      src={expo.imageUrl}
+                      alt={expo.title}
+                      sx={{
+                        width: '100%',
+                        height: 180,
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                  <Box sx={{ flexGrow: 1, p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: activeTheme.textPrimary }}>
+                        {expo.title}
+                      </Typography>
+                      <Chip 
+                        label={expo.status} 
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          bgcolor: `${activeTheme.accent}20`,
+                          color: activeTheme.accent,
+                          border: `1px solid ${activeTheme.accent}30`,
+                          fontWeight: 700
+                        }}
+                      />
+                    </Box>
+
+                    {expo.theme && (
+                      <Typography variant="body2" sx={{ color: activeTheme.textSecondary, mb: 1.5, fontWeight: 600 }}>
+                        Theme: <span style={{ color: activeTheme.textPrimary }}>{expo.theme}</span>
+                      </Typography>
+                    )}
+
+                    {expo.dateRange && (
+                      <Typography variant="body2" sx={{ mb: 1.5, color: activeTheme.textSecondary }}>
+                        <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Dates:</span> {formatDate(expo.dateRange.startDate)} -{' '}
+                        {formatDate(expo.dateRange.endDate)}
+                      </Typography>
+                    )}
+
+                    {expo.location && (
+                      <Typography variant="body2" sx={{ mb: 2, color: activeTheme.textSecondary }}>
+                        <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Location:</span> {expo.location.city}, {expo.location.country}
+                      </Typography>
+                    )}
+                  </Box>
                   </Box>
 
-                  {expo.theme && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Theme: {expo.theme}
-                    </Typography>
-                  )}
-
-                  {expo.dateRange && (
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Dates:</strong> {formatDate(expo.dateRange.startDate)} -{' '}
-                      {formatDate(expo.dateRange.endDate)}
-                    </Typography>
-                  )}
-
-                  {expo.location && (
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                      <strong>Location:</strong> {expo.location.city}, {expo.location.country}
-                    </Typography>
-                  )}
-                </CardContent>
-
-                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => onRegister(expo.expoId)}
-                  >
-                    Register
-                  </Button>
-                </CardActions>
-              </Card>
+                  <Box sx={{ mt: 'auto', pt: 3, px: 3, pb: 3, borderTop: `1px solid ${activeTheme.border}`, display: 'flex', justifyContent: 'flex-end' }}>
+                    <ActionButton
+                      size="small"
+                      primary
+                      startIcon={<Add />}
+                      onClick={() => onRegister(expo.expoId)}
+                    >
+                      Register
+                    </ActionButton>
+                  </Box>
+                </GlassCard>
+              </MotionBox>
             </Grid>
           ))}
         </Grid>

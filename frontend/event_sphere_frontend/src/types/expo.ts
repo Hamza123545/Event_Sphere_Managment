@@ -18,6 +18,7 @@ export interface ExpoSummary {
     city: string;
     country: string;
   };
+  imageUrl?: string;
 }
 
 export interface ExpoDetail extends ExpoSummary {
@@ -35,6 +36,7 @@ export interface ExpoDetail extends ExpoSummary {
     userId: string;
     name: string;
   };
+  imageUrl?: string;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }
@@ -55,6 +57,7 @@ export interface CreateExpoRequest {
     country: string;
     zipCode?: string;
   };
+  imageFile?: File; // Optional image file for upload
 }
 
 export interface UpdateExpoRequest {
@@ -74,6 +77,7 @@ export interface UpdateExpoRequest {
     zipCode?: string;
   };
   status?: 'draft' | 'upcoming' | 'active' | 'cancelled'; // completed cannot be set manually
+  imageFile?: File; // Optional image file for upload
 }
 
 export interface ExpoListResponse {

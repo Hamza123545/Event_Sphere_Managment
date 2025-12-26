@@ -1,14 +1,15 @@
 import express, { Application } from 'express';
 import path from 'path';
-// Note: helmet and compression packages need to be installed:
-// npm install helmet compression @types/compression
-// For now, commenting out until packages are installed
-// import helmet from 'helmet';
-// import compression from 'compression';
+import helmet from 'helmet';
+// @ts-expect-error - compression types not available, but package is installed
+import compression from 'compression';
 import corsMiddleware, { corsLogger } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import { logger } from './utils/logger';
-// import { generalRateLimiter } from './middleware/rateLimit';
+import { generalRateLimiter } from './middleware/rateLimit';
+import healthRoutes from './routes/healthRoutes';
+import { requestLogger } from './middleware/requestLogger';
+import { metricsMiddleware, metricsHandler } from './middleware/metrics';
+import apiDocsRoutes from './routes/apiDocsRoutes';
 
 /**
  * Express application setup
@@ -19,36 +20,38 @@ const app: Application = express();
 
 // Security middleware (must be first)
 // Helmet sets various HTTP headers to help protect the app (T234)
-// Note: Uncomment after installing helmet: npm install helmet
-// app.use(
-//   helmet({
-//     contentSecurityPolicy: {
-//       directives: {
-//         defaultSrc: ["'self'"],
-//         styleSrc: ["'self'", "'unsafe-inline'"],
-//         scriptSrc: ["'self'"],
-//         imgSrc: ["'self'", 'data:', 'https:'],
-//         connectSrc: ["'self'"],
-//         fontSrc: ["'self'"],
-//         objectSrc: ["'none'"],
-//         mediaSrc: ["'self'"],
-//         frameSrc: ["'none'"],
-//       },
-//     },
-//     crossOriginEmbedderPolicy: false, // Allow embedding if needed
-//   })
-// );
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'ws://localhost:5000'],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Allow embedding if needed
+    crossOriginResourcePolicy: false, // Allow cross-origin resources for API endpoints
+  })
+);
 
 // Compression middleware (T243)
-// Note: compression package needs to be installed: npm install compression @types/compression
-// For now, commenting out until package is installed
-// app.use(compression({ filter: (req: express.Request, res: express.Response) => {
-//   // Compress JSON responses >1KB
-//   if (req.headers['x-no-compression']) {
-//     return false;
-//   }
-//   return compression.filter(req, res);
-// }}));
+// Compress JSON responses >1KB
+app.use(compression({
+  filter: (req: express.Request, res: express.Response) => {
+    // Don't compress responses with this header
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression filter for JSON/text content
+    return compression.filter(req, res);
+  },
+}));
 
 // CORS middleware
 app.use(corsLogger);
@@ -64,29 +67,26 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static file serving for uploads (before routes)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Request logging middleware
-app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
-  logger.info('Incoming request', {
-    method: req.method,
-    path: req.path,
-    ip: req.ip,
-    userAgent: req.get('user-agent'),
-  });
-  next();
-});
+// Structured request logging middleware - Implements T257
+app.use(requestLogger);
 
-// Health check endpoint (before routes)
-app.get('/health', (_req: express.Request, res: express.Response) => {
-  res.status(200).json({
-    success: true,
-    message: 'EventSphere API is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
+// Metrics collection middleware - Implements T260
+app.use(metricsMiddleware);
 
-// API routes will be mounted here
-// app.use('/api/v1', routes);
+// Health check routes (before API routes) - Implements T259
+app.use('/health', healthRoutes);
+
+// API Documentation (Swagger UI) - Implements T268
+app.use('/api-docs', apiDocsRoutes);
+
+// Metrics endpoint - Implements T260
+app.get('/metrics', metricsHandler);
+
+// Import API routes
+import routes from './routes';
+
+// API routes
+app.use('/api/v1', routes);
 
 // 404 handler (before error handler)
 app.use(notFoundHandler);

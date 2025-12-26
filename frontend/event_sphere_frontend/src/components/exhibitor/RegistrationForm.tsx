@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
@@ -18,10 +17,16 @@ import {
   Chip,
   IconButton,
   LinearProgress,
+  Typography,
 } from '@mui/material';
 import { Add, Delete, CloudUpload } from '@mui/icons-material';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import type { RegisterForExpoRequest } from '../../types/exhibitor';
+import {
+  ActionButton,
+  activeTheme,
+  GlassCard,
+} from '../../theme/designSystem';
 
 interface RegistrationFormProps {
   open: boolean;
@@ -70,19 +75,46 @@ export default function RegistrationForm({
     const updated = [...formData.productsServices];
     updated[index] = value;
     setFormData({ ...formData, productsServices: updated });
+    
+    // Clear error if at least one valid product/service exists
+    if (errors.productsServices) {
+      const validProducts = updated.filter((p) => p.trim());
+      if (validProducts.length > 0) {
+        setErrors({ ...errors, productsServices: '' });
+      }
+    }
   };
 
   const addProductService = () => {
+    const updated = [...formData.productsServices, ''];
     setFormData({
       ...formData,
-      productsServices: [...formData.productsServices, ''],
+      productsServices: updated,
     });
+    
+    // Clear error if at least one valid product/service already exists
+    if (errors.productsServices) {
+      const validProducts = updated.filter((p) => p.trim());
+      if (validProducts.length > 0) {
+        setErrors({ ...errors, productsServices: '' });
+      }
+    }
   };
 
   const removeProductService = (index: number) => {
     if (formData.productsServices.length > 1) {
       const updated = formData.productsServices.filter((_, i) => i !== index);
       setFormData({ ...formData, productsServices: updated });
+      
+      // Re-validate after removal
+      const validProducts = updated.filter((p) => p.trim());
+      if (validProducts.length === 0 && errors.productsServices === '') {
+        // Only set error if it wasn't already set
+        setErrors({ ...errors, productsServices: 'At least one product/service is required' });
+      } else if (validProducts.length > 0) {
+        // Clear error if valid products exist
+        setErrors({ ...errors, productsServices: '' });
+      }
     }
   };
 
@@ -217,27 +249,75 @@ export default function RegistrationForm({
     }
   };
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Register for {expoTitle}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Register for {expoTitle}
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
           {isLoading && uploadProgress > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <LinearProgress variant="determinate" value={uploadProgress} />
-              <Typography variant="caption" color="text.secondary">
+            <Box sx={{ mb: 3 }}>
+              <LinearProgress 
+                variant="determinate" 
+                value={uploadProgress}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  bgcolor: activeTheme.surfaceLight,
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: activeTheme.accent,
+                  },
+                }}
+              />
+              <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600, mt: 1, display: 'block' }}>
                 Uploading files... {uploadProgress}%
               </Typography>
             </Box>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             {/* Company Name */}
             <Grid item xs={12}>
               <TextField
@@ -249,6 +329,7 @@ export default function RegistrationForm({
                 error={!!errors.companyName}
                 helperText={errors.companyName}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -265,44 +346,46 @@ export default function RegistrationForm({
                 error={!!errors.description}
                 helperText={errors.description || 'Minimum 20 characters'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
             {/* Products/Services */}
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
                 Products/Services *
               </Typography>
               {formData.productsServices.map((product, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 2 }}>
                   <TextField
                     fullWidth
                     placeholder="Enter product or service"
                     value={product}
                     onChange={(e) => handleProductsServicesChange(index, e.target.value)}
                     disabled={isLoading}
+                    sx={textFieldSx}
                   />
                   {formData.productsServices.length > 1 && (
                     <IconButton
                       onClick={() => removeProductService(index)}
                       disabled={isLoading}
-                      color="error"
+                      sx={{ color: activeTheme.error }}
                     >
                       <Delete />
                     </IconButton>
                   )}
                 </Box>
               ))}
-              <Button
+              <ActionButton
                 startIcon={<Add />}
                 onClick={addProductService}
                 disabled={isLoading}
                 size="small"
               >
                 Add Product/Service
-              </Button>
+              </ActionButton>
               {errors.productsServices && (
-                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: activeTheme.error, display: 'block', mt: 1, fontWeight: 600 }}>
                   {errors.productsServices}
                 </Typography>
               )}
@@ -319,6 +402,7 @@ export default function RegistrationForm({
                 error={!!errors.category}
                 helperText={errors.category}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -334,6 +418,7 @@ export default function RegistrationForm({
                 error={!!errors.contactEmail}
                 helperText={errors.contactEmail}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -345,6 +430,7 @@ export default function RegistrationForm({
                 value={formData.contactPhone}
                 onChange={handleChange('contactPhone')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -356,6 +442,7 @@ export default function RegistrationForm({
                 value={formData.website}
                 onChange={handleChange('website')}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -371,17 +458,16 @@ export default function RegistrationForm({
                   disabled={isLoading}
                 />
                 <label htmlFor="logo-upload">
-                  <Button
-                    variant="outlined"
+                  <ActionButton
                     component="span"
                     startIcon={<CloudUpload />}
                     disabled={isLoading}
                   >
                     {logoFile ? `Logo: ${logoFile.name}` : 'Upload Company Logo (Optional, Max 5MB)'}
-                  </Button>
+                  </ActionButton>
                 </label>
                 {errors.logo && (
-                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: activeTheme.error, display: 'block', mt: 1, fontWeight: 600 }}>
                     {errors.logo}
                   </Typography>
                 )}
@@ -401,29 +487,35 @@ export default function RegistrationForm({
                   disabled={isLoading}
                 />
                 <label htmlFor="documents-upload">
-                  <Button
-                    variant="outlined"
+                  <ActionButton
                     component="span"
                     startIcon={<CloudUpload />}
                     disabled={isLoading}
                   >
                     Upload Documents (Optional, Max 10MB each, PDF/JPG/PNG)
-                  </Button>
+                  </ActionButton>
                 </label>
                 {documentFiles.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
+                  <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {documentFiles.map((file, index) => (
                       <Chip
                         key={index}
                         label={file.name}
                         onDelete={() => removeDocument(index)}
-                        sx={{ mr: 1, mb: 1 }}
+                        sx={{
+                          mr: 1,
+                          mb: 1,
+                          bgcolor: `${activeTheme.accent}20`,
+                          color: activeTheme.accent,
+                          border: `1px solid ${activeTheme.accent}30`,
+                          fontWeight: 600
+                        }}
                       />
                     ))}
                   </Box>
                 )}
                 {errors.documents && (
-                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: activeTheme.error, display: 'block', mt: 1, fontWeight: 600 }}>
                     {errors.documents}
                   </Typography>
                 )}
@@ -431,13 +523,13 @@ export default function RegistrationForm({
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={handleClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Submit Registration'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

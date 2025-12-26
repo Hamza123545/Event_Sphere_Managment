@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import * as messagingApi from '../services/messagingApi';
-import { getSocket, onSocketEvent, offSocketEvent, joinUserRoom, leaveUserRoom } from '../services/socket';
+import { getSocket, onSocketEvent, offSocketEvent, joinUserRoom, } from '../services/socket';
 import type { Message, SendMessageRequest, NewMessageEvent } from '../types/messaging';
 import { useAuthStore } from './authStore';
 
@@ -140,13 +140,19 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     joinUserRoom(userId);
 
     // Handle new-message event
-    const handleNewMessage = (event: NewMessageEvent) => {
-      // Refresh messages and unread count
+    const handleNewMessage = async (event: NewMessageEvent) => {
       const state = get();
-      state.getMessages({ type: 'inbox' });
       const user = useAuthStore.getState().user;
       const role = user?.role === 'attendee' ? 'attendee' : 'exhibitor';
-      state.getUnreadCount(role);
+      
+      // Refresh both inbox and sent messages to update conversations
+      await Promise.all([
+        state.getMessages({ type: 'inbox' }),
+        state.getMessages({ type: 'sent' }),
+      ]);
+      
+      // Update unread count
+      await state.getUnreadCount(role);
 
       // Set notification for UI display
       set({

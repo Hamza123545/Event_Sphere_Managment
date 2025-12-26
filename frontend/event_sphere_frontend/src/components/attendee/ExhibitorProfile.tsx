@@ -5,17 +5,20 @@
  */
 
 import {
-  Card,
-  CardContent,
   Typography,
   Box,
   Chip,
   Avatar,
-  Button,
   Divider,
 } from '@mui/material';
 import { Business, LocationOn } from '@mui/icons-material';
 import type { ExhibitorSearchResult } from '../../types/attendee';
+import {
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface ExhibitorProfileProps {
   exhibitor: ExhibitorSearchResult;
@@ -24,38 +27,73 @@ interface ExhibitorProfileProps {
 
 export default function ExhibitorProfile({ exhibitor, onContact }: ExhibitorProfileProps) {
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'start', gap: 3, mb: 3 }}>
+    <MotionBox
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <GlassCard>
+        <Box sx={{ display: 'flex', alignItems: 'start', gap: 3, mb: 4 }}>
           {exhibitor.logo ? (
-            <Avatar src={exhibitor.logo} alt={exhibitor.companyName} sx={{ width: 80, height: 80 }} />
+            <Avatar 
+              src={exhibitor.logo} 
+              alt={exhibitor.companyName} 
+              sx={{ 
+                width: 80, 
+                height: 80,
+                border: `3px solid ${activeTheme.accentGlow}`
+              }} 
+            />
           ) : (
-            <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main' }}>
+            <Avatar sx={{ 
+              width: 80, 
+              height: 80, 
+              bgcolor: activeTheme.accent,
+              border: `3px solid ${activeTheme.accentGlow}`
+            }}>
               <Business sx={{ fontSize: 40 }} />
             </Avatar>
           )}
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.5, color: activeTheme.textPrimary }}>
               {exhibitor.companyName}
             </Typography>
-            <Chip label={exhibitor.category} color="primary" sx={{ mb: 2 }} />
-            <Typography variant="body1" color="text.secondary">
+            <Chip 
+              label={exhibitor.category} 
+              sx={{ 
+                mb: 2,
+                bgcolor: `${activeTheme.accent}20`,
+                color: activeTheme.accent,
+                border: `1px solid ${activeTheme.accent}30`,
+                fontWeight: 700
+              }} 
+            />
+            <Typography variant="body1" sx={{ color: activeTheme.textSecondary, lineHeight: 1.7 }}>
               {exhibitor.description}
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ my: 3, borderColor: activeTheme.border }} />
 
         {/* Products/Services */}
         {exhibitor.productsServices.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
               Products & Services
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {exhibitor.productsServices.map((product, index) => (
-                <Chip key={index} label={product} variant="outlined" />
+                <Chip 
+                  key={index} 
+                  label={product} 
+                  sx={{
+                    bgcolor: `${activeTheme.accent}20`,
+                    color: activeTheme.accent,
+                    border: `1px solid ${activeTheme.accent}30`,
+                    fontWeight: 600
+                  }}
+                />
               ))}
             </Box>
           </Box>
@@ -63,16 +101,18 @@ export default function ExhibitorProfile({ exhibitor, onContact }: ExhibitorProf
 
         {/* Booth Location */}
         {exhibitor.booth && (
-          <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <LocationOn color="primary" />
-              <Typography variant="h6">Booth Location</Typography>
+          <Box sx={{ mb: 4, p: 3, bgcolor: activeTheme.surface, borderRadius: 2, border: `1px solid ${activeTheme.border}` }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <LocationOn sx={{ color: activeTheme.accent }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: activeTheme.textPrimary }}>
+                Booth Location
+              </Typography>
             </Box>
-            <Typography variant="body1">
-              Booth: <strong>{exhibitor.booth.identifier}</strong>
+            <Typography variant="body1" sx={{ color: activeTheme.textPrimary, fontWeight: 600, mb: 1 }}>
+              Booth: <span style={{ color: activeTheme.accent }}>{exhibitor.booth.identifier}</span>
             </Typography>
             {exhibitor.booth.location && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: activeTheme.textSecondary }}>
                 Location: ({exhibitor.booth.location.x}, {exhibitor.booth.location.y})
               </Typography>
             )}
@@ -81,14 +121,14 @@ export default function ExhibitorProfile({ exhibitor, onContact }: ExhibitorProf
 
         {/* Contact Button */}
         {onContact && (
-          <Box sx={{ mt: 3 }}>
-            <Button variant="contained" size="large" onClick={onContact}>
+          <Box sx={{ mt: 4 }}>
+            <ActionButton primary size="large" fullWidth onClick={onContact}>
               Contact Exhibitor
-            </Button>
+            </ActionButton>
           </Box>
         )}
-      </CardContent>
-    </Card>
+      </GlassCard>
+    </MotionBox>
   );
 }
 

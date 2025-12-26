@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore, UserRole } from '../../stores/authStore';
+import { connectSocket, getSocket } from '../../services/socket';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,8 +19,19 @@ export function ProtectedRoute({
   requiredRole,
   redirectTo = '/login',
 }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, token } = useAuthStore();
   const location = useLocation();
+
+  // Initialize socket connection when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user && token) {
+      const currentSocket = getSocket();
+      // Only connect if not already connected
+      if (!currentSocket || !currentSocket.connected) {
+        connectSocket(token);
+      }
+    }
+  }, [isAuthenticated, user, token]);
 
   // Check authentication
   if (!isAuthenticated || !user) {

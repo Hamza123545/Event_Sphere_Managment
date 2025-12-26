@@ -55,7 +55,7 @@ interface AnalyticsResult {
   sessionPopularity?: SessionPopularityMetrics;
   boothTraffic?: BoothTrafficMetrics;
   engagementRate?: EngagementRateMetrics;
-  generatedAt: Date;
+  generatedAt: string; // Changed to string for JSON serialization
 }
 
 /**
@@ -74,7 +74,9 @@ export async function getExpoAnalytics(
     if (!expo) {
       throw new CustomError('Expo not found', 404, 'EXPO_NOT_FOUND');
     }
-    if (userRole === 'organizer' && expo.organizer.toString() !== userId) {
+    const organizerId = expo.organizer?.toString ? expo.organizer.toString() : String(expo.organizer);
+    if (userRole === 'organizer' && organizerId !== userId) {
+      logger.warn('Access denied to analytics', { userId, organizerId, userRole, expoId });
       throw new CustomError('Forbidden: Not the organizer of this expo', 403, 'FORBIDDEN');
     }
 
@@ -89,7 +91,7 @@ export async function getExpoAnalytics(
     const result: AnalyticsResult = {
       expoId: expo._id.toString(),
       expoTitle: expo.title,
-      generatedAt: new Date(),
+      generatedAt: new Date().toISOString(), // Convert to ISO string for JSON serialization
     };
 
     // Calculate metrics based on requested type

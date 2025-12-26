@@ -43,8 +43,10 @@ export default function AppBar({ onCreateExpo, onBrowseExpos, title = 'EventSphe
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
 
   // Load unread count on mount and periodically (T174)
+  // For exhibitors, attendees, organizers, and admins
   useEffect(() => {
-    if (user?.userId && (user.role === 'exhibitor' || user.role === 'attendee' || user.role === 'organizer')) {
+    if (user?.userId && (user.role === 'exhibitor' || user.role === 'attendee' || user.role === 'organizer' || user.role === 'admin')) {
+      // Attendees use attendee endpoint, everyone else uses exhibitor endpoint
       const role = user.role === 'attendee' ? 'attendee' : 'exhibitor';
       getUnreadCount(role);
       
@@ -79,7 +81,7 @@ export default function AppBar({ onCreateExpo, onBrowseExpos, title = 'EventSphe
       disconnectSocket();
       logoutStore();
       navigate('/login');
-    } catch (error) {
+    } catch {
       // Even if API call fails, clear local state and redirect
       disconnectSocket();
       logoutStore();

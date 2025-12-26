@@ -64,8 +64,8 @@ export interface ScheduleConflict {
 }
 
 /**
- * Get expo schedule (all sessions)
- * Implements FR-015
+ * Get expo schedule (all sessions) with pagination
+ * Implements FR-015, T237
  */
 export async function getExpoSchedule(
   expoId: string,
@@ -74,9 +74,48 @@ export async function getExpoSchedule(
     category?: string;
     topic?: string;
     date?: string;
+    page?: number;
+    limit?: number;
   }
-): Promise<SessionDetail[]> {
+): Promise<{
+  sessions: SessionDetail[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
   try {
+    const page = options?.page || 1;
+    const limit = Math.min(options?.limit || 20, 100); // Max 100 items per page
+    const skip = (page - 1) * limit;
+
+    // Try to get from cache (T238) - only for first page without filters
+    if (page === 1 && !options?.category && !options?.topic && !options?.date) {
+      const { cacheService, CacheKeys } = await import('./cacheService');
+      const cacheKey = CacheKeys.sessionSchedule(expoId);
+      const cached = await cacheService.get<{ sessions: SessionDetail[]; pagination: any }>(cacheKey);
+      if (cached) {
+        logger.debug('Returning cached session schedule', { expoId, cacheKey });
+        // If userId provided, still need to check bookmark status
+        if (userId && cached.sessions.length > 0) {
+          const { SessionBookmark } = await import('../models/SessionBookmark');
+          const sessionIds = cached.sessions.map((s) => s.sessionId);
+          const userBookmarks = await SessionBookmark.find({
+            user: userId,
+            session: { $in: sessionIds },
+          });
+          const bookmarks = new Set(userBookmarks.map((b) => b.session.toString()));
+          cached.sessions = cached.sessions.map((session) => ({
+            ...session,
+            isBookmarked: bookmarks.has(session.sessionId),
+          }));
+        }
+        return cached;
+      }
+    }
+
     const query: any = { expo: expoId };
 
     if (options?.category) {
@@ -99,11 +138,17 @@ export async function getExpoSchedule(
       };
     }
 
-    const sessions = await Session.find(query).sort({ 'schedule.startTime': 1 });
+    // Get total count for pagination
+    const totalItems = await Session.countDocuments(query);
+
+    const sessions = await Session.find(query)
+      .sort({ 'schedule.startTime': 1 })
+      .skip(skip)
+      .limit(limit);
 
     // If userId provided, check bookmark status
     let bookmarks: Set<string> = new Set();
-    if (userId) {
+    if (userId && sessions.length > 0) {
       const userBookmarks = await SessionBookmark.find({
         user: userId,
         session: { $in: sessions.map((s) => s._id) },
@@ -111,7 +156,7 @@ export async function getExpoSchedule(
       bookmarks = new Set(userBookmarks.map((b) => b.session.toString()));
     }
 
-    return sessions.map((session: any) => ({
+    const sessionDetails = sessions.map((session: any) => ({
       sessionId: session._id.toString(),
       expoId,
       title: session.title,
@@ -131,6 +176,27 @@ export async function getExpoSchedule(
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
     }));
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const result = {
+      sessions: sessionDetails,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
+
+    // Cache result (T238) - only cache first page without filters
+    if (page === 1 && !options?.category && !options?.topic && !options?.date) {
+      const { cacheService, CacheKeys } = await import('./cacheService');
+      const cacheKey = CacheKeys.sessionSchedule(expoId);
+      await cacheService.set(cacheKey, result);
+    }
+
+    return result;
   } catch (error) {
     logger.error('Error in getExpoSchedule service:', error);
     throw new CustomError('Failed to get expo schedule', 500, 'GET_SCHEDULE_ERROR');
@@ -154,6 +220,12 @@ export async function bookmarkSession(
     const session = await Session.findById(sessionId);
     if (!session) {
       throw new CustomError('Session not found', 404, 'SESSION_NOT_FOUND');
+    }
+
+    // Ensure expo field is available (it might be an ObjectId that needs to be converted)
+    const expoId = session.expo?.toString ? session.expo.toString() : String(session.expo);
+    if (!expoId) {
+      throw new CustomError('Session expo information is missing', 500, 'INVALID_SESSION_DATA');
     }
 
     // Check if already bookmarked
@@ -191,9 +263,9 @@ export async function bookmarkSession(
     });
 
     // Broadcast real-time update
-    broadcastToExpo(session.expo.toString(), 'schedule-changed', {
+    broadcastToExpo(expoId, 'schedule-changed', {
       type: 'schedule-changed',
-      expoId: session.expo.toString(),
+      expoId: expoId,
       session: {
         sessionId: session._id.toString(),
         title: session.title,
@@ -214,7 +286,13 @@ export async function bookmarkSession(
     if (error instanceof CustomError) {
       throw error;
     }
-    logger.error('Error in bookmarkSession service:', error);
+    // Log the full error details to help debug
+    logger.error('Error in bookmarkSession service:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      sessionId,
+      userId,
+    });
     throw new CustomError('Failed to bookmark session', 500, 'BOOKMARK_SESSION_ERROR');
   }
 }
@@ -390,9 +468,12 @@ async function formatSessionDetail(session: ISession, userId?: string): Promise<
     isBookmarked = !!bookmark;
   }
 
+  // Safely extract expoId
+  const expoId = session.expo?.toString ? session.expo.toString() : String(session.expo);
+
   return {
     sessionId: session._id.toString(),
-    expoId: session.expo.toString(),
+    expoId: expoId,
     title: session.title,
     description: session.description,
     speakers: session.speakers,

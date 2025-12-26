@@ -9,15 +9,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
   CircularProgress,
-  Box,
+  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import type { CreateFloorPlanRequest } from '../../types/floorPlan';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
+import ImageUpload from '../common/ImageUpload';
 
 interface CreateFloorPlanFormProps {
   open: boolean;
@@ -30,7 +34,6 @@ interface CreateFloorPlanFormProps {
 
 export default function CreateFloorPlanForm({
   open,
-  expoId,
   onClose,
   onSubmit,
   isLoading = false,
@@ -47,6 +50,7 @@ export default function CreateFloorPlanForm({
       scale: 10,
     },
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +97,8 @@ export default function CreateFloorPlanForm({
       newErrors['dimensions.height'] = 'Height must be between 10 and 1000 meters';
     }
 
-    if (formData.imageUrl && formData.imageUrl.trim()) {
+    // Image is optional - can be file upload or URL
+    if (formData.imageUrl && formData.imageUrl.trim() && !imageFile) {
       try {
         new URL(formData.imageUrl);
       } catch {
@@ -114,7 +119,12 @@ export default function CreateFloorPlanForm({
     if (!validateForm()) return;
 
     try {
-      await onSubmit(formData);
+      // Create request with file if present
+      const request: CreateFloorPlanRequest & { imageFile?: File } = {
+        ...formData,
+        ...(imageFile && { imageFile }),
+      };
+      await onSubmit(request as CreateFloorPlanRequest);
       // Reset form
       setFormData({
         name: '',
@@ -122,9 +132,10 @@ export default function CreateFloorPlanForm({
         imageUrl: '',
         metadata: { scale: 10 },
       });
+      setImageFile(null);
       setErrors({});
       onClose();
-    } catch (err) {
+    } catch  {
       // Error handled by parent
     }
   };
@@ -137,23 +148,61 @@ export default function CreateFloorPlanForm({
         imageUrl: '',
         metadata: { scale: 10 },
       });
+      setImageFile(null);
       setErrors({});
       onClose();
     }
   };
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Create Floor Plan</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Create Floor Plan
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 required
@@ -164,6 +213,7 @@ export default function CreateFloorPlanForm({
                 error={!!errors.name}
                 helperText={errors.name || '3-200 characters'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -179,6 +229,7 @@ export default function CreateFloorPlanForm({
                 error={!!errors['dimensions.width']}
                 helperText={errors['dimensions.width'] || '10-1000 meters'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -194,19 +245,20 @@ export default function CreateFloorPlanForm({
                 error={!!errors['dimensions.height']}
                 helperText={errors['dimensions.height'] || '10-1000 meters'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Image URL (Optional)"
-                placeholder="https://example.com/floor-plan.png"
-                value={formData.imageUrl || ''}
-                onChange={handleChange('imageUrl')}
-                error={!!errors.imageUrl}
-                helperText={errors.imageUrl || 'URL to floor plan image'}
+              <Typography variant="subtitle2" sx={{ color: activeTheme.textSecondary, mb: 1, fontWeight: 600 }}>
+                Floor Plan Image (Optional)
+              </Typography>
+              <ImageUpload
+                value={imageFile}
+                onChange={setImageFile}
                 disabled={isLoading}
+                error={errors.imageUrl}
+                maxSizeMB={10}
               />
             </Grid>
 
@@ -221,17 +273,18 @@ export default function CreateFloorPlanForm({
                 error={!!errors.scale}
                 helperText={errors.scale || 'Default: 10 pixels per meter'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={handleClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Create Floor Plan'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

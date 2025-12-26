@@ -8,12 +8,16 @@ import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 /**
- * General rate limiter: 100 requests per 15 minutes per IP
+ * General rate limiter
+ * Development: 1000 requests per 15 minutes (more lenient for testing)
+ * Production: 500 requests per 15 minutes
  */
 export const generalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: isDevelopment ? 1000 : 500, // More lenient in development
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -36,11 +40,13 @@ export const generalRateLimiter = rateLimit({
 });
 
 /**
- * Strict rate limiter for auth endpoints: 5 login attempts per 15 minutes per IP
+ * Strict rate limiter for auth endpoints
+ * Development: 20 login attempts per 15 minutes (more lenient for testing)
+ * Production: 5 login attempts per 15 minutes
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts per windowMs
+  max: isDevelopment ? 20 : 5, // More lenient in development
   message: {
     success: false,
     message: 'Too many login attempts, please try again later.',
@@ -64,11 +70,13 @@ export const authRateLimiter = rateLimit({
 });
 
 /**
- * Password reset rate limiter: 3 requests per hour per IP
+ * Password reset rate limiter
+ * Development: 10 requests per hour (more lenient for testing)
+ * Production: 3 requests per hour
  */
 export const passwordResetRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 password reset requests per hour
+  max: isDevelopment ? 10 : 3, // More lenient in development
   message: {
     success: false,
     message: 'Too many password reset requests, please try again later.',

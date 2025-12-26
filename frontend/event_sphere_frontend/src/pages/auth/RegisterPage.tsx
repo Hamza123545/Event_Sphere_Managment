@@ -7,14 +7,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
-  Paper,
   TextField,
-  Button,
   Typography,
   Box,
   Link,
-  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -24,11 +20,20 @@ import {
   Checkbox,
   Grid,
 } from '@mui/material';
+import { AutoAwesome } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import { register as registerApi } from '../../services/authApi';
 import { connectSocket } from '../../services/socket';
 import { parseApiError, getValidationErrors } from '../../utils/errorHandler';
 import type { RegisterRequest } from '../../types/auth';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -74,7 +79,7 @@ export default function RegisterPage() {
       newErrors.password = 'Password must contain at least one lowercase letter';
     } else if (!/[0-9]/.test(formData.password)) {
       newErrors.password = 'Password must contain at least one number';
-    } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
+    } else if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password)) {
       newErrors.password = 'Password must contain at least one special character';
     }
 
@@ -152,7 +157,7 @@ export default function RegisterPage() {
   };
 
   const handleChange = (field: string) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: any } }
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: string } }
   ) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -204,45 +209,71 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container component="main" maxWidth="md">
+    <PageContainer>
+      <BackgroundGlows />
       <Box
         sx={{
-          marginTop: 4,
-          marginBottom: 4,
+          minHeight: '100vh',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <Typography component="h1" variant="h4" gutterBottom>
-            EventSphere
-          </Typography>
-          <Typography component="h2" variant="h5" gutterBottom>
-            Create Account
-          </Typography>
+        <Box sx={{ width: '100%', maxWidth: 600, px: 3 }}>
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <GlassCard sx={{ p: 5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: activeTheme.accent,
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mr: 2,
+                  }}
+                >
+                  <AutoAwesome sx={{ color: '#fff', fontSize: '1.5rem' }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-1px' }}>
+                  EventSphere
+                </Typography>
+              </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, textAlign: 'center' }}>
+                Create Account
+              </Typography>
+
+              {error && (
+                <Box
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    bgcolor: `${activeTheme.error}20`,
+                    border: `1px solid ${activeTheme.error}30`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: activeTheme.error }}>
+                    {error}
+                  </Typography>
+                </Box>
+              )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <Grid container spacing={2}>
               {/* Role Selection */}
               <Grid item xs={12}>
                 <FormControl fullWidth required>
-                  <InputLabel id="role-label">Account Type</InputLabel>
+                  <InputLabel id="role-label" sx={{ color: activeTheme.textSecondary }}>Account Type</InputLabel>
                   <Select
                     labelId="role-label"
                     id="role"
@@ -251,9 +282,19 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       handleChange('role')({
                         target: { value: e.target.value },
-                      } as any)
+                      } as React.ChangeEvent<HTMLInputElement>)
                     }
                     disabled={isLoading}
+                    sx={{
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: activeTheme.accent,
+                      },
+                    }}
                   >
                     <MenuItem value="organizer">Organizer</MenuItem>
                     <MenuItem value="exhibitor">Exhibitor</MenuItem>
@@ -276,6 +317,21 @@ export default function RegisterPage() {
                   error={!!errors.email}
                   helperText={errors.email}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
@@ -294,6 +350,21 @@ export default function RegisterPage() {
                   error={!!errors.password}
                   helperText={errors.password}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
@@ -311,6 +382,21 @@ export default function RegisterPage() {
                   error={!!errors.confirmPassword}
                   helperText={errors.confirmPassword}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
@@ -328,6 +414,21 @@ export default function RegisterPage() {
                   error={!!errors.firstName}
                   helperText={errors.firstName}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
@@ -345,6 +446,21 @@ export default function RegisterPage() {
                   error={!!errors.lastName}
                   helperText={errors.lastName}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
@@ -361,13 +477,28 @@ export default function RegisterPage() {
                   error={!!errors.phone}
                   helperText={errors.phone}
                   disabled={isLoading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surface,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               </Grid>
 
               {/* GDPR Consent */}
               <Grid item xs={12}>
-                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
+                <Box sx={{ border: `1px solid ${activeTheme.border}`, borderRadius: 2, p: 3, bgcolor: activeTheme.surface }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
                     Privacy & Consent
                   </Typography>
                   <FormControlLabel
@@ -377,16 +508,22 @@ export default function RegisterPage() {
                         onChange={handleCheckboxChange('dataProcessingConsent')}
                         disabled={isLoading}
                         required
+                        sx={{
+                          color: activeTheme.accent,
+                          '&.Mui-checked': {
+                            color: activeTheme.accent,
+                          },
+                        }}
                       />
                     }
                     label={
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ color: activeTheme.textPrimary }}>
                         I consent to the processing of my personal data (Required)
                       </Typography>
                     }
                   />
                   {errors.dataProcessingConsent && (
-                    <Typography variant="caption" color="error" sx={{ ml: 4, display: 'block' }}>
+                    <Typography variant="caption" sx={{ color: activeTheme.error, ml: 4, display: 'block', mt: 0.5 }}>
                       {errors.dataProcessingConsent}
                     </Typography>
                   )}
@@ -396,10 +533,16 @@ export default function RegisterPage() {
                         checked={formData.gdprConsent.marketingConsent || false}
                         onChange={handleCheckboxChange('marketingConsent')}
                         disabled={isLoading}
+                        sx={{
+                          color: activeTheme.accent,
+                          '&.Mui-checked': {
+                            color: activeTheme.accent,
+                          },
+                        }}
                       />
                     }
                     label={
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ color: activeTheme.textPrimary }}>
                         I consent to receiving marketing communications (Optional)
                       </Typography>
                     }
@@ -408,30 +551,39 @@ export default function RegisterPage() {
               </Grid>
             </Grid>
 
-            <Button
+            <ActionButton
               type="submit"
+              primary
               fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Create Account'}
-            </Button>
+              {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Create Account'}
+            </ActionButton>
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Link
                 component="button"
                 type="button"
                 variant="body2"
                 onClick={() => navigate('/login')}
-                sx={{ cursor: 'pointer' }}
+                sx={{
+                  cursor: 'pointer',
+                  color: activeTheme.accent,
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
               >
                 Already have an account? Sign In
               </Link>
             </Box>
           </Box>
-        </Paper>
+            </GlassCard>
+          </MotionBox>
+        </Box>
       </Box>
-    </Container>
+    </PageContainer>
   );
 }
 

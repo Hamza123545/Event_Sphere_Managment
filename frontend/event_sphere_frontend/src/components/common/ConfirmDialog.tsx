@@ -4,8 +4,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
 } from '@mui/material';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -16,6 +19,7 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   severity?: 'info' | 'warning' | 'error';
+  isLoading?: boolean;
 }
 
 /**
@@ -31,31 +35,50 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   severity = 'warning',
+  isLoading = false,
 }: ConfirmDialogProps) {
-  const getConfirmColor = () => {
-    switch (severity) {
-      case 'error':
-        return 'error';
-      case 'warning':
-        return 'warning';
-      default:
-        return 'primary';
-    }
-  };
 
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>{message}</DialogContentText>
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+        {title}
+      </DialogTitle>
+      <DialogContent sx={{ bgcolor: activeTheme.surface }}>
+        <DialogContentText sx={{ color: activeTheme.textSecondary }}>
+          {message}
+        </DialogContentText>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel} color="inherit">
+      <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={onCancel} disabled={isLoading}>
           {cancelText}
-        </Button>
-        <Button onClick={onConfirm} color={getConfirmColor()} variant="contained">
+        </ActionButton>
+        <ActionButton 
+          onClick={onConfirm}
+          disabled={isLoading}
+          primary={severity !== 'error'}
+          sx={severity === 'error' ? {
+            color: activeTheme.error,
+            border: `1px solid ${activeTheme.error}30`,
+            '&:hover': { bgcolor: `${activeTheme.error}20` },
+            '&:disabled': {
+              color: `${activeTheme.error}60`,
+              border: `1px solid ${activeTheme.error}20`,
+            }
+          } : {}}
+        >
           {confirmText}
-        </Button>
+        </ActionButton>
       </DialogActions>
     </Dialog>
   );

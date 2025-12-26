@@ -5,9 +5,10 @@ import http from 'http';
 import app from './app';
 import database from './config/database';
 import { logger } from './utils/logger';
-import routes from './routes';
 import { setupSocketIO } from './services/realtime';
 import { startScheduler } from './services/schedulerService';
+import cacheService from './services/cacheService';
+import jobQueue from './services/jobQueue';
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -23,14 +24,13 @@ if (!MONGODB_URI) {
  * Implements constitutional requirements for reliability and observability
  */
 
-// Mount API routes
-app.use('/api/v1', routes);
-
 // Create HTTP server
 const server = http.createServer(app);
 
-// Setup Socket.io for real-time updates
-setupSocketIO(server);
+// Setup Socket.io for real-time updates (with Redis adapter for horizontal scaling)
+setupSocketIO(server).catch((error) => {
+  logger.error('Failed to setup Socket.io:', error);
+});
 
 /**
  * Start server function
@@ -44,6 +44,14 @@ async function startServer(): Promise<void> {
 
     // Start scheduler service for background jobs (T194)
     startScheduler();
+
+    // Initialize cache service (T238) - already initialized as singleton
+    logger.info('Cache service initialized', {
+      redisConnected: cacheService.isConnected()
+    });
+
+    // Job queue is already initialized as singleton (T240)
+    logger.info('Job queue service initialized');
 
     // Create logs directory if it doesn't exist (for Winston file transports)
     const fs = await import('fs');
@@ -110,6 +118,14 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info('HTTP server closed');
 
     try {
+      // Close job queues (T240)
+      await jobQueue.close();
+      logger.info('Job queues closed');
+
+      // Close cache service (T238)
+      await cacheService.disconnect();
+      logger.info('Cache service disconnected');
+
       // Close database connection
       await database.disconnect();
       logger.info('Database disconnected');

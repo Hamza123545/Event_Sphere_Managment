@@ -54,17 +54,6 @@ export default function ConnectionStatus() {
     };
   }, []);
 
-  const getStatusColor = (): 'success' | 'error' | 'warning' => {
-    switch (status) {
-      case 'connected':
-        return 'success';
-      case 'reconnecting':
-        return 'warning';
-      case 'disconnected':
-        return 'error';
-    }
-  };
-
   const getStatusText = (): string => {
     switch (status) {
       case 'connected':
@@ -73,6 +62,17 @@ export default function ConnectionStatus() {
         return 'Reconnecting...';
       case 'disconnected':
         return 'Disconnected';
+    }
+  };
+
+  const getStatusColorValue = () => {
+    switch (status) {
+      case 'connected':
+        return '#4caf50';
+      case 'reconnecting':
+        return '#ff9800';
+      case 'disconnected':
+        return '#f44336';
     }
   };
 
@@ -85,7 +85,7 @@ export default function ConnectionStatus() {
           <Circle
             sx={{
               fontSize: 12,
-              color: status === 'connected' ? '#4caf50' : status === 'reconnecting' ? '#ff9800' : '#f44336',
+              color: getStatusColorValue(),
             }}
           />
         }
@@ -95,7 +95,8 @@ export default function ConnectionStatus() {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            bgcolor: status === 'connected' ? '#4caf50' : status === 'reconnecting' ? '#ff9800' : '#f44336',
+            bgcolor: getStatusColorValue(),
+            boxShadow: `0 0 8px ${getStatusColorValue()}80`,
           }}
         />
       </Badge>

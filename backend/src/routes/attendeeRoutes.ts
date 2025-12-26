@@ -5,7 +5,7 @@
  */
 
 import { Router, type Router as ExpressRouter } from 'express';
-import { body, param, query } from 'express-validator';
+import { body, query } from 'express-validator';
 import * as attendeeService from '../services/attendeeService';
 import * as sessionService from '../services/sessionService';
 import * as messagingService from '../services/messagingService';
@@ -42,7 +42,7 @@ router.get(
     query('dateTo').optional().isISO8601().withMessage('Invalid date format'),
   ]),
   asyncHandler(async (req: AuthRequest, res) => {
-    const expos = await attendeeService.browseExpos({
+    const result = await attendeeService.browseExpos({
       status: req.query.status as any,
       category: req.query.category as string,
       location: req.query.location as string,
@@ -52,9 +52,7 @@ router.get(
 
     res.json({
       success: true,
-      data: {
-        expos,
-      },
+      data: result,
     });
   })
 );
@@ -116,21 +114,26 @@ router.get(
     query('category').optional().trim(),
     query('topic').optional().trim(),
     query('date').optional().isISO8601().withMessage('Invalid date format'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   ]),
   asyncHandler(async (req: AuthRequest, res) => {
     const { expoId } = req.params;
     const userId = req.user!.userId;
 
-    const sessions = await sessionService.getExpoSchedule(expoId, userId, {
+    const result = await sessionService.getExpoSchedule(expoId, userId, {
       category: req.query.category as string,
       topic: req.query.topic as string,
       date: req.query.date as string,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     });
 
     res.json({
       success: true,
       data: {
-        sessions,
+        sessions: result.sessions,
+        pagination: result.pagination,
       },
     });
   })
@@ -290,22 +293,27 @@ router.get(
       .withMessage('Invalid context'),
     query('type').optional().isIn(['inbox', 'sent']).withMessage('Type must be inbox or sent'),
     query('relatedExpoId').optional().isMongoId().withMessage('Invalid related expo ID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('offset').optional().isInt({ min: 0 }).withMessage('Offset must be non-negative'),
+    query('conversationWith').optional().isMongoId().withMessage('Invalid conversation user ID'),
+    query('beforeTimestamp').optional().isISO8601().withMessage('Invalid timestamp format'),
   ]),
   asyncHandler(async (req: AuthRequest, res) => {
-    const messages = await messagingService.getMessages(req.user!.userId, {
+    const result = await messagingService.getMessages(req.user!.userId, {
       type: (req.query.type as 'inbox' | 'sent') || 'inbox',
       context: req.query.context as string,
       relatedExpoId: req.query.relatedExpoId as string,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
       limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-      offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
+      conversationWith: req.query.conversationWith as string,
+      beforeTimestamp: req.query.beforeTimestamp as string,
     });
 
     res.json({
       success: true,
       data: {
-        messages,
+        messages: result.messages,
+        pagination: result.pagination,
       },
     });
   })

@@ -224,9 +224,10 @@ npm run seed
 
 | Role | Email | Password |
 |------|-------|----------|
-| Organizer | organizer@eventsphere.com | password123 |
-| Exhibitor | exhibitor@eventsphere.com | password123 |
-| Attendee | attendee@eventsphere.com | password123 |
+| Admin | admin@eventsphere.com | admin123 |
+| Organizer | organizer@eventsphere.com | organizer123 |
+| Exhibitor | exhibitor1@eventsphere.com | exhibitor123 |
+| Attendee | attendee1@eventsphere.com | attendee123 |
 
 ---
 
@@ -252,6 +253,7 @@ npm run dev
 **Verify Backend**:
 - API Health: http://localhost:5000/health
 - API Documentation: http://localhost:5000/api-docs (Swagger UI)
+- Metrics: http://localhost:5000/metrics (Prometheus metrics)
 
 ### Terminal 2: Start Frontend
 

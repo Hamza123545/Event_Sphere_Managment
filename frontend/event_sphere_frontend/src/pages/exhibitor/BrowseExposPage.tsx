@@ -5,12 +5,18 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography } from '@mui/material';
-import AppBar from '../../components/common/AppBar';
+import { Box, Typography } from '@mui/material';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import ExpoDirectory from '../../components/exhibitor/ExpoDirectory';
 import RegistrationForm from '../../components/exhibitor/RegistrationForm';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
 import type { ExpoSummary } from '../../types/expo';
+import {
+  PageContainer,
+  BackgroundGlows,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function BrowseExposPage() {
   const navigate = useNavigate();
@@ -34,15 +40,23 @@ export default function BrowseExposPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Exhibitor Portal" onBrowseExpos={() => navigate('/exhibitor/browse')} />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Browse Available Expos
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Find and register for expos to showcase your company
-        </Typography>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar />
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 6 }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: '-2px' }}>
+            Browse Available Expos
+          </Typography>
+          <Typography variant="h6" sx={{ color: activeTheme.textSecondary, fontWeight: 500 }}>
+            Find and register for expos to showcase your company
+          </Typography>
+        </MotionBox>
 
         <ExpoDirectory onRegister={handleRegister} />
 
@@ -58,8 +72,8 @@ export default function BrowseExposPage() {
             onSuccess={handleRegistrationSuccess}
           />
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

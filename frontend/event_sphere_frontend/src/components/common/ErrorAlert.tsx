@@ -1,5 +1,6 @@
 import { Alert, AlertTitle, Snackbar } from '@mui/material';
 import { useState, useEffect } from 'react';
+import { activeTheme } from '../../theme/designSystem';
 
 interface ErrorAlertProps {
   message: string;
@@ -7,6 +8,7 @@ interface ErrorAlertProps {
   severity?: 'error' | 'warning' | 'info' | 'success';
   autoHideDuration?: number;
   onClose?: () => void;
+  sx?: any;
 }
 
 /**
@@ -20,6 +22,7 @@ export function ErrorAlert({
   severity = 'error',
   autoHideDuration = 6000,
   onClose,
+  sx,
 }: ErrorAlertProps) {
   const [open, setOpen] = useState(true);
 
@@ -41,6 +44,23 @@ export function ErrorAlert({
     }
   };
 
+  const getSeverityColor = () => {
+    switch (severity) {
+      case 'error':
+        return activeTheme.error;
+      case 'warning':
+        return activeTheme.warning;
+      case 'info':
+        return activeTheme.info;
+      case 'success':
+        return activeTheme.success;
+      default:
+        return activeTheme.error;
+    }
+  };
+
+  const severityColor = getSeverityColor();
+
   return (
     <Snackbar
       open={open}
@@ -48,8 +68,22 @@ export function ErrorAlert({
       onClose={handleClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
     >
-      <Alert onClose={handleClose} severity={severity} sx={{ width: '100%' }}>
-        {title && <AlertTitle>{title}</AlertTitle>}
+      <Alert 
+        onClose={handleClose} 
+        severity={severity} 
+        sx={{ 
+          width: '100%',
+          bgcolor: `${severityColor}20`,
+          border: `1px solid ${severityColor}30`,
+          color: activeTheme.textPrimary,
+          ...sx
+        }}
+      >
+        {title && (
+          <AlertTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+            {title}
+          </AlertTitle>
+        )}
         {message}
       </Alert>
     </Snackbar>

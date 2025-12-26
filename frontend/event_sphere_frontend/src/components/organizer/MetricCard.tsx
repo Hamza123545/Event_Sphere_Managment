@@ -4,8 +4,13 @@
  * Implements T188
  */
 
-import { Card, CardContent, Typography, Box, Avatar } from '@mui/material';
+import { Typography, Box, Avatar } from '@mui/material';
 import { TrendingUp, TrendingDown, Remove } from '@mui/icons-material';
+import {
+  GlassCard,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface MetricCardProps {
   title: string;
@@ -42,57 +47,67 @@ export default function MetricCard({
   const getColorValue = () => {
     switch (color) {
       case 'primary':
-        return 'primary.main';
+        return activeTheme.accent;
       case 'secondary':
-        return 'secondary.main';
+        return activeTheme.textSecondary;
       case 'success':
-        return 'success.main';
+        return activeTheme.success;
       case 'warning':
-        return 'warning.main';
+        return activeTheme.warning;
       case 'error':
-        return 'error.main';
+        return activeTheme.error;
       case 'info':
-        return 'info.main';
+        return activeTheme.info;
       default:
-        return 'primary.main';
+        return activeTheme.accent;
     }
   };
 
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+    <MotionBox
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -5 }}
+    >
+      <GlassCard sx={{ height: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="body2" sx={{ color: activeTheme.textSecondary, fontWeight: 700 }}>
             {title}
           </Typography>
           {icon && (
-            <Avatar sx={{ bgcolor: getColorValue(), width: 40, height: 40 }}>
-              {icon}
+            <Avatar sx={{ bgcolor: `${getColorValue()}20`, width: 48, height: 48, border: `2px solid ${getColorValue()}30` }}>
+              <Box sx={{ color: getColorValue() }}>{icon}</Box>
             </Avatar>
           )}
         </Box>
-        <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: activeTheme.textPrimary }}>
           {value}
         </Typography>
         {subtitle && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 600, display: 'block', mb: 1 }}>
             {subtitle}
           </Typography>
         )}
         {trend && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 2 }}>
             {getTrendIcon()}
             <Typography
               variant="caption"
-              color={trend.direction === 'up' ? 'success.main' : trend.direction === 'down' ? 'error.main' : 'text.secondary'}
+              sx={{
+                color: trend.direction === 'up' ? activeTheme.success : 
+                       trend.direction === 'down' ? activeTheme.error : 
+                       activeTheme.textSecondary,
+                fontWeight: 700
+              }}
             >
               {trend.direction === 'up' ? '+' : trend.direction === 'down' ? '-' : ''}
               {Math.abs(trend.value)}%
             </Typography>
           </Box>
         )}
-      </CardContent>
-    </Card>
+      </GlassCard>
+    </MotionBox>
   );
 }
 

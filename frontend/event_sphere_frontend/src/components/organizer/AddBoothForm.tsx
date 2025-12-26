@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Grid,
   Alert,
@@ -22,9 +21,14 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
+  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import type { CreateBoothSpaceRequest } from '../../types/floorPlan';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface AddBoothFormProps {
   open: boolean;
@@ -86,7 +90,7 @@ export default function AddBoothForm({
         },
       });
     } else if (field === 'priceTier') {
-      setFormData({ ...formData, priceTier: e.target.value as any });
+      setFormData({ ...formData, priceTier: e.target.value as 'standard' | 'premium' | 'deluxe' });
     } else {
       setFormData({ ...formData, [field]: e.target.value });
     }
@@ -169,18 +173,55 @@ export default function AddBoothForm({
     }
   };
 
+  const textFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: activeTheme.surfaceLight,
+      color: activeTheme.textPrimary,
+      '& fieldset': {
+        borderColor: activeTheme.border,
+      },
+      '&:hover fieldset': {
+        borderColor: activeTheme.accent,
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: activeTheme.textSecondary,
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add Booth Space</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+          Add Booth Space
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: activeTheme.surface }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                bgcolor: `${activeTheme.error}20`,
+                border: `1px solid ${activeTheme.error}30`,
+                color: activeTheme.textPrimary
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 required
@@ -192,6 +233,7 @@ export default function AddBoothForm({
                 error={!!errors.identifier}
                 helperText={errors.identifier || 'Unique identifier for this booth'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -207,6 +249,7 @@ export default function AddBoothForm({
                 error={!!errors['size.width']}
                 helperText={errors['size.width']}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -222,6 +265,7 @@ export default function AddBoothForm({
                 error={!!errors['size.height']}
                 helperText={errors['size.height']}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -237,6 +281,7 @@ export default function AddBoothForm({
                 error={!!errors['location.x']}
                 helperText={errors['location.x'] || 'Position from left edge (meters)'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
@@ -252,17 +297,28 @@ export default function AddBoothForm({
                 error={!!errors['location.y']}
                 helperText={errors['location.y'] || 'Position from top edge (meters)'}
                 disabled={isLoading}
+                sx={textFieldSx}
               />
             </Grid>
 
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Price Tier</InputLabel>
+                <InputLabel sx={{ color: activeTheme.textSecondary }}>Price Tier</InputLabel>
                 <Select
                   value={formData.priceTier}
                   label="Price Tier"
-                  onChange={(e) => setFormData({ ...formData, priceTier: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, priceTier: e.target.value as 'standard' | 'premium' | 'deluxe' })}
                   disabled={isLoading}
+                  sx={{
+                    bgcolor: activeTheme.surfaceLight,
+                    color: activeTheme.textPrimary,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: activeTheme.border,
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: activeTheme.accent,
+                    },
+                  }}
                 >
                   <MenuItem value="standard">Standard</MenuItem>
                   <MenuItem value="premium">Premium</MenuItem>
@@ -273,7 +329,7 @@ export default function AddBoothForm({
 
             <Grid item xs={12}>
               <Box>
-                <InputLabel sx={{ mb: 1 }}>Amenities</InputLabel>
+                <InputLabel sx={{ mb: 2, color: activeTheme.textSecondary, fontWeight: 700 }}>Amenities</InputLabel>
                 <FormGroup>
                   {AVAILABLE_AMENITIES.map((amenity) => (
                     <FormControlLabel
@@ -283,9 +339,15 @@ export default function AddBoothForm({
                           checked={formData.amenities.includes(amenity)}
                           onChange={handleAmenityChange(amenity)}
                           disabled={isLoading}
+                          sx={{
+                            color: activeTheme.accent,
+                            '&.Mui-checked': {
+                              color: activeTheme.accent,
+                            },
+                          }}
                         />
                       }
-                      label={amenity}
+                      label={<Typography sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>{amenity}</Typography>}
                     />
                   ))}
                 </FormGroup>
@@ -293,13 +355,13 @@ export default function AddBoothForm({
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isLoading}>
+        <DialogActions sx={{ bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+          <ActionButton onClick={handleClose} disabled={isLoading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
+          </ActionButton>
+          <ActionButton type="submit" primary disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Add Booth'}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </form>
     </Dialog>

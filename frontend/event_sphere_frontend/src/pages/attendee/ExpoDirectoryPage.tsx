@@ -7,27 +7,30 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Chip,
-  Alert,
 } from '@mui/material';
-import { Add, Search } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import { Search, LocationOn, Event, LocalFireDepartment } from '@mui/icons-material';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import { useAttendeeStore } from '../../stores/attendeeStore';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassCard,
+  GlassContainer,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 export default function ExpoDirectoryPage() {
   const navigate = useNavigate();
@@ -65,100 +68,207 @@ export default function ExpoDirectoryPage() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Attendee Portal" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Browse Expos
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Discover and register for exciting expo events
-        </Typography>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar navItems={[
+        { label: 'Explore', path: '/attendee/expos' },
+        { label: 'My Events', path: '/attendee' },
+      ]} />
+      
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 6 }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: '-2px' }}>
+            Browse Expos
+          </Typography>
+          <Typography variant="h6" sx={{ color: activeTheme.textSecondary, fontWeight: 500 }}>
+            Discover and register for exciting expo events
+          </Typography>
+        </MotionBox>
 
         {/* Filters */}
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <TextField
-            placeholder="Search expos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-            }}
-            sx={{ flexGrow: 1, minWidth: 200 }}
-          />
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="upcoming">Upcoming</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            placeholder="Category/Theme"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            sx={{ minWidth: 200 }}
-          />
-          <TextField
-            placeholder="Location (City/Country)"
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-            sx={{ minWidth: 200 }}
-          />
-        </Box>
+        <GlassContainer sx={{ p: 3, mb: 4 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField
+              placeholder="Search expos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <Search sx={{ mr: 1, color: activeTheme.textSecondary }} />,
+              }}
+              sx={{ 
+                flexGrow: 1, 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& fieldset': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: activeTheme.accent,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: activeTheme.textSecondary,
+                },
+              }}
+            />
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel sx={{ color: activeTheme.textSecondary }}>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Status"
+                onChange={(e) => setStatusFilter(e.target.value as 'upcoming' | 'active' | '')}
+                sx={{
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: activeTheme.accent,
+                  },
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="upcoming">Upcoming</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              placeholder="Category/Theme"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& fieldset': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: activeTheme.accent,
+                  },
+                },
+              }}
+            />
+            <TextField
+              placeholder="Location (City/Country)"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: activeTheme.surface,
+                  color: activeTheme.textPrimary,
+                  '& fieldset': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: activeTheme.accent,
+                  },
+                },
+              }}
+            />
+          </Box>
+        </GlassContainer>
 
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         {isLoading && expos.length === 0 ? (
-          <LoadingSpinner />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+            <LoadingSpinner />
+          </Box>
         ) : filteredExpos.length === 0 ? (
-          <Alert severity="info">No expos found matching your criteria.</Alert>
+          <GlassCard>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography sx={{ color: activeTheme.textSecondary, mb: 2 }}>
+                No expos found matching your criteria.
+              </Typography>
+            </Box>
+          </GlassCard>
         ) : (
           <Grid container spacing={3}>
-            {filteredExpos.map((expo) => (
+            {filteredExpos.map((expo, i) => (
               <Grid item xs={12} sm={6} md={4} key={expo.expoId}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', flex: 1 }}>
+                <MotionBox
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <GlassCard 
+                    sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+                    onClick={() => navigate(`/attendee/expos/${expo.expoId}`)}
+                  >
+                    <Box sx={{ 
+                      height: 180, 
+                      position: 'relative', 
+                      overflow: 'hidden',
+                      background: `linear-gradient(135deg, ${activeTheme.accent}20 0%, ${activeTheme.accent}10 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Box sx={{ position: 'absolute', top: 12, left: 12 }}>
+                        <Chip 
+                          label={expo.status === 'active' ? 'Live' : expo.status} 
+                          size="small"
+                          {...(expo.status === 'active' && { icon: <LocalFireDepartment /> })}
+                          sx={{ 
+                            bgcolor: expo.status === 'active' ? activeTheme.error : activeTheme.accent, 
+                            color: '#fff', 
+                            fontWeight: 800, 
+                            backdropFilter: 'blur(4px)' 
+                          }} 
+                        />
+                      </Box>
+                      <Event sx={{ fontSize: 64, color: activeTheme.accent, opacity: 0.3 }} />
+                    </Box>
+                    <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
                         {expo.title}
                       </Typography>
-                      <Chip label={expo.status} color="primary" size="small" sx={{ ml: 1 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: activeTheme.textSecondary }}>
+                        <Event sx={{ fontSize: 16 }} />
+                        <Typography variant="caption">
+                          {formatDate(expo.dateRange.startDate)} - {formatDate(expo.dateRange.endDate)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, color: activeTheme.textSecondary }}>
+                        <LocationOn sx={{ fontSize: 16 }} />
+                        <Typography variant="caption">
+                          {expo.location.city}, {expo.location.country}
+                        </Typography>
+                      </Box>
+                      <ActionButton 
+                        primary 
+                        fullWidth
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          navigate(`/attendee/expos/${expo.expoId}`);
+                        }}
+                      >
+                        View Details
+                      </ActionButton>
                     </Box>
-
-
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Dates:</strong> {formatDate(expo.dateRange.startDate)} -{' '}
-                      {formatDate(expo.dateRange.endDate)}
-                    </Typography>
-
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                      <strong>Location:</strong> {expo.location.city}, {expo.location.country}
-                    </Typography>
-                  </CardContent>
-
-                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<Add />}
-                      onClick={() => navigate(`/attendee/expo/${expo.expoId}`)}
-                    >
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
+                  </GlassCard>
+                </MotionBox>
               </Grid>
             ))}
           </Grid>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 

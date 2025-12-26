@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   FormControl,
   InputLabel,
@@ -22,6 +21,10 @@ import {
   Box,
 } from '@mui/material';
 import type { SendMessageRequest } from '../../types/messaging';
+import {
+  ActionButton,
+  activeTheme,
+} from '../../theme/designSystem';
 
 interface ComposeMessageProps {
   open: boolean;
@@ -106,19 +109,58 @@ export default function ComposeMessage({
         subject: formData.subject?.trim() || undefined,
       });
       handleClose();
-    } catch (error: any) {
-      setSubmitError(error.response?.data?.message || 'Failed to send message');
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to send message';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+      ) {
+        errorMessage = error.response.data.message;
+      }
+      setSubmitError(errorMessage);
     }
   };
 
   const selectedRecipient = availableRecipients.find((r) => r.userId === formData.recipientId);
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Compose Message</DialogTitle>
-      <DialogContent dividers>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: activeTheme.surface,
+          border: `1px solid ${activeTheme.border}`,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: activeTheme.textPrimary, fontWeight: 800 }}>
+        Compose Message
+      </DialogTitle>
+      <DialogContent dividers sx={{ bgcolor: activeTheme.surface }}>
         {submitError && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2,
+              bgcolor: `${activeTheme.error}20`,
+              border: `1px solid ${activeTheme.error}30`,
+              color: activeTheme.textPrimary
+            }} 
+            onClose={() => setSubmitError(null)}
+          >
             {submitError}
           </Alert>
         )}
@@ -141,6 +183,21 @@ export default function ComposeMessage({
                   required
                   error={!!errors.recipientId}
                   helperText={errors.recipientId}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: activeTheme.surfaceLight,
+                      color: activeTheme.textPrimary,
+                      '& fieldset': {
+                        borderColor: activeTheme.border,
+                      },
+                      '&:hover fieldset': {
+                        borderColor: activeTheme.accent,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: activeTheme.textSecondary,
+                    },
+                  }}
                 />
               )}
             />
@@ -156,16 +213,41 @@ export default function ComposeMessage({
               error={!!errors.recipientId}
               helperText={errors.recipientId || 'Enter the user ID of the recipient'}
               disabled={!!defaultRecipientId}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: activeTheme.surfaceLight,
+                  color: activeTheme.textPrimary,
+                  '& fieldset': {
+                    borderColor: activeTheme.border,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: activeTheme.accent,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: activeTheme.textSecondary,
+                },
+              }}
             />
           )}
 
           {/* Context Dropdown */}
           <FormControl fullWidth>
-            <InputLabel>Context</InputLabel>
+            <InputLabel sx={{ color: activeTheme.textSecondary }}>Context</InputLabel>
             <Select
               value={formData.context}
               label="Context"
               onChange={(e) => setFormData({ ...formData, context: e.target.value as SendMessageRequest['context'] })}
+              sx={{
+                bgcolor: activeTheme.surfaceLight,
+                color: activeTheme.textPrimary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: activeTheme.accent,
+                },
+              }}
             >
               <MenuItem value="general-inquiry">General Inquiry</MenuItem>
               <MenuItem value="exhibitor-collaboration">Exhibitor Collaboration</MenuItem>
@@ -184,6 +266,21 @@ export default function ComposeMessage({
             }}
             error={!!errors.subject}
             helperText={errors.subject || `${formData.subject?.length || 0}/200 characters`}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: activeTheme.surfaceLight,
+                color: activeTheme.textPrimary,
+                '& fieldset': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: activeTheme.accent,
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: activeTheme.textSecondary,
+              },
+            }}
           />
 
           {/* Content */}
@@ -199,21 +296,36 @@ export default function ComposeMessage({
             }}
             error={!!errors.content}
             helperText={errors.content || `${formData.content.length}/5000 characters`}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: activeTheme.surfaceLight,
+                color: activeTheme.textPrimary,
+                '& fieldset': {
+                  borderColor: activeTheme.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: activeTheme.accent,
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: activeTheme.textSecondary,
+              },
+            }}
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isLoading}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: activeTheme.surface, borderTop: `1px solid ${activeTheme.border}` }}>
+        <ActionButton onClick={handleClose} disabled={isLoading}>
           Cancel
-        </Button>
-        <Button
+        </ActionButton>
+        <ActionButton
           onClick={handleSubmit}
-          variant="contained"
+          primary
           disabled={isLoading || !formData.recipientId || !formData.content.trim()}
           startIcon={isLoading ? <CircularProgress size={16} /> : undefined}
         >
           Send
-        </Button>
+        </ActionButton>
       </DialogActions>
     </Dialog>
   );

@@ -7,18 +7,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Typography,
-  Paper,
   Tabs,
   Tab,
   Chip,
-  Button,
   Alert,
 } from '@mui/material';
-import { ArrowBack, Event, Schedule, Store, Map } from '@mui/icons-material';
-import AppBar from '../../components/common/AppBar';
+import { ArrowBack, Event, Schedule, Store, Map, LocationOn } from '@mui/icons-material';
+import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import ScheduleView from '../../components/attendee/ScheduleView';
@@ -28,6 +25,15 @@ import ExhibitorList from '../../components/attendee/ExhibitorList';
 import ExhibitorProfile from '../../components/attendee/ExhibitorProfile';
 import FloorPlanView from '../../components/attendee/FloorPlanView';
 import { useAttendeeStore } from '../../stores/attendeeStore';
+import {
+  PageContainer,
+  BackgroundGlows,
+  GlassContainer,
+  GlassCard,
+  ActionButton,
+  activeTheme,
+  MotionBox,
+} from '../../theme/designSystem';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,11 +73,6 @@ export default function ExpoDetailPage() {
   useEffect(() => {
     if (expoId) {
       getExpoDetails(expoId);
-      // Load exhibitors and floor plan when tabs are available
-      if (selectedExpo?.registrationStatus === 'registered') {
-        searchExhibitors(expoId);
-        viewFloorPlan(expoId);
-      }
     }
 
     return () => {
@@ -79,14 +80,16 @@ export default function ExpoDetailPage() {
         unsubscribeFromScheduleUpdates(expoId);
       }
     };
-  }, [expoId, getExpoDetails, unsubscribeFromScheduleUpdates, searchExhibitors, viewFloorPlan, selectedExpo]);
+  }, [expoId, getExpoDetails, unsubscribeFromScheduleUpdates]);
 
-  // Load exhibitors and floor plan when registration status changes
+  // Load exhibitors and floor plan when registration status changes and user switches to those tabs
   useEffect(() => {
-    if (expoId && selectedExpo?.registrationStatus === 'registered' && tabValue > 0) {
+    if (expoId && selectedExpo?.registrationStatus === 'registered') {
       if (tabValue === 1) {
+        // Exhibitors tab - load exhibitors
         searchExhibitors(expoId);
       } else if (tabValue === 2) {
+        // Floor plan tab - load floor plan only when tab is active
         viewFloorPlan(expoId);
       }
     }
@@ -113,103 +116,175 @@ export default function ExpoDetailPage() {
 
   if (isLoading && !selectedExpo) {
     return (
-      <>
-        <AppBar title="Attendee Portal" />
+      <PageContainer>
+        <ModernNavbar navItems={[
+          { label: 'Explore', path: '/attendee/expos' },
+          { label: 'My Events', path: '/attendee' },
+        ]} />
         <LoadingSpinner fullScreen />
-      </>
+      </PageContainer>
     );
   }
 
   if (!selectedExpo || !expoId) {
     return (
-      <>
-        <AppBar title="Attendee Portal" />
-        <Container>
+      <PageContainer>
+        <ModernNavbar navItems={[
+          { label: 'Explore', path: '/attendee/expos' },
+          { label: 'My Events', path: '/attendee' },
+        ]} />
+        <Box sx={{ mt: 8, px: { xs: 3, md: 8 } }}>
           <ErrorAlert message="Expo not found" severity="error" />
-        </Container>
-      </>
+        </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <AppBar title="Attendee Portal" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/attendee')} sx={{ mb: 2 }}>
-          Back to Dashboard
-        </Button>
+    <PageContainer>
+      <BackgroundGlows />
+      <ModernNavbar navItems={[
+        { label: 'Explore', path: '/attendee/expos' },
+        { label: 'My Events', path: '/attendee' },
+      ]} />
+      
+      <Box sx={{ mt: 8, position: 'relative', zIndex: 1, maxWidth: '1400px', mx: 'auto', px: { xs: 3, md: 8 } }}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{ mb: 4 }}
+        >
+          <ActionButton 
+            startIcon={<ArrowBack />} 
+            onClick={() => navigate('/attendee')} 
+            sx={{ mb: 3 }}
+          >
+            Back to Dashboard
+          </ActionButton>
+        </MotionBox>
 
-        {error && <ErrorAlert message={error} onClose={clearError} severity="error" />}
+        {error && (
+          <Box sx={{ mb: 4 }}>
+            <ErrorAlert message={error} onClose={clearError} severity="error" />
+          </Box>
+        )}
 
         {/* Expo Header */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h4" component="h1" gutterBottom>
+        <GlassContainer sx={{ p: 4, mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ flex: 1, minWidth: 300 }}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 800, mb: 2, color: activeTheme.textPrimary }}>
                 {selectedExpo.title}
               </Typography>
-              <Chip label={selectedExpo.status} color="primary" sx={{ mb: 2 }} />
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                <Chip 
+                  label={selectedExpo.status} 
+                  sx={{ 
+                    bgcolor: selectedExpo.status === 'active' ? activeTheme.error : activeTheme.accent,
+                    color: '#fff',
+                    fontWeight: 700
+                  }} 
+                />
+                {selectedExpo.registrationStatus === 'registered' && (
+                  <Chip 
+                    label="Registered" 
+                    sx={{ 
+                      bgcolor: activeTheme.success + '20',
+                      color: activeTheme.success,
+                      border: `1px solid ${activeTheme.success}30`,
+                      fontWeight: 700
+                    }} 
+                  />
+                )}
+              </Box>
               {selectedExpo.theme && (
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography variant="body1" sx={{ color: activeTheme.textSecondary, mb: 2 }}>
                   Theme: {selectedExpo.theme}
                 </Typography>
               )}
             </Box>
             {selectedExpo.registrationStatus === 'not-registered' && (
-              <Button
-                variant="contained"
+              <ActionButton
+                primary
                 startIcon={<Event />}
                 onClick={() => setRegistrationDialogOpen(true)}
               >
                 Register for Expo
-              </Button>
-            )}
-            {selectedExpo.registrationStatus === 'registered' && (
-              <Chip label="Registered" color="success" />
+              </ActionButton>
             )}
           </Box>
 
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 3, color: activeTheme.textSecondary, lineHeight: 1.7 }}>
             {selectedExpo.description}
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <Box>
-              <Typography variant="caption" color="text.secondary">
-                Dates
+              <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 700, display: 'block', mb: 0.5 }}>
+                DATES
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
                 {formatDate(selectedExpo.dateRange.startDate)} - {formatDate(selectedExpo.dateRange.endDate)}
               </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" color="text.secondary">
-                Location
+              <Typography variant="caption" sx={{ color: activeTheme.textSecondary, fontWeight: 700, display: 'block', mb: 0.5 }}>
+                LOCATION
               </Typography>
-              <Typography variant="body2">
-                {selectedExpo.location.venueName}
-                <br />
-                {selectedExpo.location.city}, {selectedExpo.location.country}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <LocationOn sx={{ fontSize: 16, color: activeTheme.accent }} />
+                <Typography variant="body2" sx={{ color: activeTheme.textPrimary, fontWeight: 600 }}>
+                  {selectedExpo.location.venueName}
+                  <br />
+                  {selectedExpo.location.city}, {selectedExpo.location.country}
+                </Typography>
+              </Box>
             </Box>
           </Box>
-        </Paper>
+        </GlassContainer>
 
         {/* Tabs */}
-        <Paper sx={{ mb: 3 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+        <GlassContainer sx={{ mb: 4 }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            variant="scrollable" 
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': {
+                color: activeTheme.textSecondary,
+                fontWeight: 600,
+                '&.Mui-selected': {
+                  color: activeTheme.accent,
+                },
+              },
+              '& .MuiTabs-indicator': {
+                bgcolor: activeTheme.accent,
+              },
+            }}
+          >
             <Tab icon={<Schedule />} iconPosition="start" label="Schedule" />
             <Tab icon={<Store />} iconPosition="start" label="Exhibitors" />
             <Tab icon={<Map />} iconPosition="start" label="Floor Plan" />
           </Tabs>
-        </Paper>
+        </GlassContainer>
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
           {selectedExpo.registrationStatus === 'not-registered' ? (
-            <Alert severity="info">
-              Please register for this expo to view the schedule and bookmark sessions.
-            </Alert>
+            <GlassCard>
+              <Alert 
+                severity="info"
+                sx={{
+                  bgcolor: `${activeTheme.info}20`,
+                  border: `1px solid ${activeTheme.info}30`,
+                  color: activeTheme.textPrimary,
+                }}
+              >
+                Please register for this expo to view the schedule and bookmark sessions.
+              </Alert>
+            </GlassCard>
           ) : (
             <ScheduleView expoId={expoId} />
           )}
@@ -217,9 +292,18 @@ export default function ExpoDetailPage() {
 
         <TabPanel value={tabValue} index={1}>
           {selectedExpo.registrationStatus === 'not-registered' ? (
-            <Alert severity="info">
-              Please register for this expo to view exhibitors and floor plan.
-            </Alert>
+            <GlassCard>
+              <Alert 
+                severity="info"
+                sx={{
+                  bgcolor: `${activeTheme.info}20`,
+                  border: `1px solid ${activeTheme.info}30`,
+                  color: activeTheme.textPrimary,
+                }}
+              >
+                Please register for this expo to view exhibitors and floor plan.
+              </Alert>
+            </GlassCard>
           ) : (
             <Box>
               <ExhibitorSearch
@@ -229,12 +313,15 @@ export default function ExpoDetailPage() {
               />
               {selectedExhibitor ? (
                 <Box>
-                  <Button onClick={() => {
-                    // Reset selected exhibitor in store
-                    searchExhibitors(expoId);
-                  }} sx={{ mb: 2 }}>
-                    ← Back to List
-                  </Button>
+                  <ActionButton 
+                    onClick={() => {
+                      searchExhibitors(expoId);
+                    }} 
+                    sx={{ mb: 3 }}
+                    startIcon={<ArrowBack />}
+                  >
+                    Back to List
+                  </ActionButton>
                   <ExhibitorProfile exhibitor={selectedExhibitor} />
                 </Box>
               ) : (
@@ -250,7 +337,18 @@ export default function ExpoDetailPage() {
 
         <TabPanel value={tabValue} index={2}>
           {selectedExpo.registrationStatus === 'not-registered' ? (
-            <Alert severity="info">Please register for this expo to view the floor plan.</Alert>
+            <GlassCard>
+              <Alert 
+                severity="info"
+                sx={{
+                  bgcolor: `${activeTheme.info}20`,
+                  border: `1px solid ${activeTheme.info}30`,
+                  color: activeTheme.textPrimary,
+                }}
+              >
+                Please register for this expo to view the floor plan.
+              </Alert>
+            </GlassCard>
           ) : floorPlan ? (
             <FloorPlanView
               floorPlan={floorPlan}
@@ -261,7 +359,18 @@ export default function ExpoDetailPage() {
               }}
             />
           ) : (
-            <Alert severity="info">Floor plan not available for this expo.</Alert>
+            <GlassCard>
+              <Alert 
+                severity="info"
+                sx={{
+                  bgcolor: `${activeTheme.info}20`,
+                  border: `1px solid ${activeTheme.info}30`,
+                  color: activeTheme.textPrimary,
+                }}
+              >
+                Floor plan not available for this expo.
+              </Alert>
+            </GlassCard>
           )}
         </TabPanel>
 
@@ -273,8 +382,8 @@ export default function ExpoDetailPage() {
           onClose={() => setRegistrationDialogOpen(false)}
           onSuccess={handleRegisterSuccess}
         />
-      </Container>
-    </Box>
+      </Box>
+    </PageContainer>
   );
 }
 
