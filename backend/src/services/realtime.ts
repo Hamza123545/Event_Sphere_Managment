@@ -36,16 +36,18 @@ let broadcastTimer: NodeJS.Timeout | null = null;
  */
 function authenticateSocket(socket: Socket): TokenPayload | null {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+    const rawToken = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
-    if (!token) {
+    if (!rawToken) {
       logger.warn('Socket connection rejected: No token provided', {
         socketId: socket.id,
       });
       return null;
     }
 
-    const decoded = verifyToken(token as string);
+    // Trim token to remove any whitespace
+    const token = (rawToken as string).trim();
+    const decoded = verifyToken(token);
     return decoded;
   } catch (error) {
     logger.warn('Socket authentication failed', {

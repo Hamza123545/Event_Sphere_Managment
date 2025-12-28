@@ -25,7 +25,9 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('auth_token');
 
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Trim token to remove any whitespace that might have been stored
+      const trimmedToken = token.trim();
+      config.headers.Authorization = `Bearer ${trimmedToken}`;
     }
 
     return config;

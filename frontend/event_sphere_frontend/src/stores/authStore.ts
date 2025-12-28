@@ -25,9 +25,11 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -36,15 +38,31 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
       login: (user, token) => {
+        // Trim token to remove any whitespace before storing
+        const trimmedToken = token.trim();
+        
         // Store token in both localStorage and Zustand for redundancy
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('auth_token', trimmedToken);
         set({
           user,
-          token,
+          token: trimmedToken,
           isAuthenticated: true,
         });
+        // Force persist immediately
+        if (typeof window !== 'undefined') {
+          // Trigger a small delay to ensure persistence
+          setTimeout(() => {
+            // Verify it was persisted
+            const stored = localStorage.getItem('auth-storage');
+            if (!stored) {
+              // If not persisted, try again
+              localStorage.setItem('auth_token', token);
+            }
+          }, 50);
+        }
       },
 
       logout: () => {
@@ -63,6 +81,10 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, ...updatedUser } : null,
         }));
       },
+
+      setHasHydrated: (state) => {
+        set({ _hasHydrated: state });
+      },
     }),
     {
       name: 'auth-storage',
@@ -72,22 +94,27 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       // Sync with localStorage on hydration
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Ensure token is synced from localStorage if it exists
-          const storedToken = localStorage.getItem('auth_token');
-          if (storedToken && storedToken !== state.token) {
-            state.token = storedToken;
-            // If we have a token but no user, we're not fully authenticated
-            if (!state.user) {
-              state.isAuthenticated = false;
+      onRehydrateStorage: () => {
+        return (state) => {
+          if (state) {
+            // Mark as hydrated
+            state._hasHydrated = true;
+            
+            // Ensure token is synced from localStorage if it exists
+            const storedToken = localStorage.getItem('auth_token');
+            if (storedToken && storedToken !== state.token) {
+              state.token = storedToken;
+              // If we have a token but no user, we're not fully authenticated
+              if (!state.user) {
+                state.isAuthenticated = false;
+              }
+            }
+            // If we have user and token, ensure isAuthenticated is true
+            if (state.user && state.token) {
+              state.isAuthenticated = true;
             }
           }
-          // If we have user and token, ensure isAuthenticated is true
-          if (state.user && state.token) {
-            state.isAuthenticated = true;
-          }
-        }
+        };
       },
     }
   )

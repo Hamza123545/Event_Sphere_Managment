@@ -49,7 +49,16 @@ export function generateToken(payload: TokenPayload): string {
  */
 export function verifyToken(token: string): TokenPayload {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    // Trim token to remove any whitespace
+    const trimmedToken = token.trim();
+    
+    // Log token preview for debugging (first 20 chars only)
+    logger.debug('Verifying token', { 
+      tokenPreview: trimmedToken.substring(0, 20) + '...',
+      tokenLength: trimmedToken.length 
+    });
+    
+    const decoded = jwt.verify(trimmedToken, JWT_SECRET, {
       issuer: 'eventsphere-api',
       audience: 'eventsphere-client',
     });
@@ -57,14 +66,24 @@ export function verifyToken(token: string): TokenPayload {
     return decoded as TokenPayload;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      logger.warn('Invalid JWT token:', error.message);
+      logger.warn('Invalid JWT token:', {
+        error: error.message,
+        errorName: error.name,
+        tokenPreview: token.substring(0, 20) + '...',
+      });
       throw new Error('Invalid authentication token');
     }
     if (error instanceof jwt.TokenExpiredError) {
-      logger.warn('Expired JWT token');
+      logger.warn('Expired JWT token', {
+        tokenPreview: token.substring(0, 20) + '...',
+      });
       throw new Error('Authentication token has expired');
     }
-    logger.error('Error verifying token:', error);
+    logger.error('Error verifying token:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      tokenPreview: token.substring(0, 20) + '...',
+    });
     throw new Error('Failed to verify authentication token');
   }
 }

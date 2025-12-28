@@ -27,7 +27,18 @@ function extractToken(req: Request): string | null {
     return null;
   }
 
-  return parts[1];
+  // Trim whitespace from token to prevent issues
+  const token = parts[1].trim();
+  
+  // Log token for debugging (first 20 chars only for security)
+  if (token) {
+    logger.debug('Extracted token', { 
+      tokenPreview: token.substring(0, 20) + '...',
+      tokenLength: token.length 
+    });
+  }
+
+  return token;
 }
 
 /**

@@ -29,9 +29,12 @@ export function connectSocket(token: string): Socket {
     return socket;
   }
 
+  // Trim token to remove any whitespace
+  const trimmedToken = token.trim();
+
   socket = io(SOCKET_URL, {
     auth: {
-      token,
+      token: trimmedToken,
     },
     autoConnect: true,
     reconnection: true,
