@@ -85,6 +85,10 @@ export default function LoginPage() {
       // Connect Socket.io for real-time updates
       connectSocket(response.token);
 
+      // Small delay to ensure auth state is persisted before redirect
+      // This prevents race conditions with Zustand persist middleware
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Redirect based on user role
       const roleDashboard: Record<string, string> = {
         admin: '/organizer',

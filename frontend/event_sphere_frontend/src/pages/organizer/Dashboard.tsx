@@ -72,15 +72,19 @@ export default function Dashboard() {
       return;
     }
 
-    const loadExpos = async () => {
-      await listExpos({
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        page: currentPage,
-        limit: 12,
-      });
-    };
+    // Add a small delay to ensure auth state is fully loaded
+    const timer = setTimeout(() => {
+      const loadExpos = async () => {
+        await listExpos({
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          page: currentPage,
+          limit: 12,
+        });
+      };
+      loadExpos();
+    }, 50);
 
-    loadExpos();
+    return () => clearTimeout(timer);
   }, [statusFilter, currentPage, listExpos, user]);
 
   // Subscribe to real-time updates for all loaded expos

@@ -48,8 +48,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Only fetch profiles if user is authenticated
+    // Add a small delay to ensure auth state is fully loaded
     if (user && user.userId) {
-      getProfiles();
+      const timer = setTimeout(() => {
+        getProfiles();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [getProfiles, user]);
 

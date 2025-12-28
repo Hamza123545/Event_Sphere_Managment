@@ -137,8 +137,12 @@ export default function AttendeeDashboard() {
   useEffect(() => {
     // Only fetch data if user is authenticated
     if (user && user.userId) {
-      browseExpos({ status: 'upcoming' });
-      getPersonalSchedule();
+      // Add a small delay to ensure auth state is fully loaded
+      const timer = setTimeout(() => {
+        browseExpos({ status: 'upcoming' });
+        getPersonalSchedule();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [browseExpos, getPersonalSchedule, user]);
 

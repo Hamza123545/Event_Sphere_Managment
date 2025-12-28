@@ -1,0 +1,55 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # API routes - proxy to Node.js/Express server
+  # This assumes you're using Apache as a reverse proxy
+  # Adjust the port (7860) to match your backend server port
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^api/(.*)$ http://localhost:7860/api/$1 [P,L]
+
+  # Health check endpoint
+  RewriteRule ^health$ http://localhost:7860/health [P,L]
+
+  # Metrics endpoint
+  RewriteRule ^metrics$ http://localhost:7860/metrics [P,L]
+
+  # API Documentation
+  RewriteRule ^api-docs/(.*)$ http://localhost:7860/api-docs/$1 [P,L]
+
+  # Serve static uploads directory
+  RewriteCond %{REQUEST_URI} ^/uploads/(.*)$
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^uploads/(.*)$ http://localhost:7860/uploads/$1 [P,L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+  # CORS headers (adjust origins as needed)
+  Header always set Access-Control-Allow-Origin "*"
+  Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+  Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+  Header always set Access-Control-Max-Age "3600"
+
+  # Security headers
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Enable compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/json application/javascript text/css text/html text/javascript text/plain text/xml
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(env|log|md|json|lock)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
