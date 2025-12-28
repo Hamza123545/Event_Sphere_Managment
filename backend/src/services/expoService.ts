@@ -160,6 +160,11 @@ export async function createExpo(userId: string, input: CreateExpoInput): Promis
 
     await expo.save();
 
+    // Invalidate cache for organizer's expo list
+    const cacheKey = CacheKeys.expoList(userId);
+    await cacheService.delete(cacheKey);
+    logger.debug('Invalidated expo list cache after create', { userId, cacheKey });
+
     // Populate organizer info
     await expo.populate('organizer', 'profile.firstName profile.lastName');
 
@@ -419,6 +424,11 @@ export async function updateExpo(
 
     await expo.save();
 
+    // Invalidate cache for organizer's expo list
+    const cacheKey = CacheKeys.expoList(userId);
+    await cacheService.delete(cacheKey);
+    logger.debug('Invalidated expo list cache after update', { userId, cacheKey });
+
     // Populate organizer info
     await expo.populate('organizer', 'profile.firstName profile.lastName');
 
@@ -455,6 +465,7 @@ export async function updateExpo(
           },
           theme: expo.theme,
           status: expo.status,
+          imageUrl: fixImageUrl(expo.imageUrl),
         },
         timestamp: new Date().toISOString(),
       });
@@ -489,7 +500,13 @@ export async function deleteExpo(expoId: string, userId: string, userRole: strin
     // TODO: Check for active exhibitor registrations (prevent deletion if active registrations exist)
     // For now, we'll allow deletion. This check should be added when exhibitor registration is implemented.
 
+    const organizerId = expo.organizer.toString();
     await ExpoEvent.findByIdAndDelete(expoId);
+
+    // Invalidate cache for organizer's expo list
+    const cacheKey = CacheKeys.expoList(organizerId);
+    await cacheService.delete(cacheKey);
+    logger.debug('Invalidated expo list cache after delete', { organizerId, cacheKey });
 
     // Audit logging per FR-006, FR-048
     logger.info('Expo deleted successfully', {
