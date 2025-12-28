@@ -3,10 +3,10 @@
  * Implements T259 - Health check endpoint with status, uptime, database connection, version
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, type Router as ExpressRouter } from 'express';
 import database from '../config/database';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * GET /health

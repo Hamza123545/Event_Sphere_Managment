@@ -217,7 +217,8 @@ export async function deleteUserAccount(userId: string): Promise<void> {
     user.profile.lastName = '';
     user.profile.phone = undefined;
     user.profile.avatar = undefined;
-    user.passwordHash = crypto.randomBytes(32).toString('hex'); // Invalidate password
+    const cryptoModule = require('crypto');
+    user.passwordHash = cryptoModule.randomBytes(32).toString('hex'); // Invalidate password
     user.isEmailVerified = false;
     user.gdprConsent.marketingConsent = false;
     user.gdprConsent.dataProcessingConsent = false;

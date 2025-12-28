@@ -95,8 +95,8 @@ export interface ExpoUpdatedEvent {
   expoId: string;
   changes: Array<{
     field: 'dateRange' | 'location' | 'title' | 'description' | 'theme' | 'status';
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
   }>;
   expo: {
     title: string;

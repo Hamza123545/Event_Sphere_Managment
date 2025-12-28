@@ -9,7 +9,6 @@ import { body } from 'express-validator';
 import * as authService from '../services/authService';
 import { AuthRequest, requireAuth } from '../middleware/auth';
 import { validate, validateEmail, validatePassword, validateNewPassword } from '../middleware/validator';
-import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLimit';
 
 const router: ExpressRouter = Router();
 

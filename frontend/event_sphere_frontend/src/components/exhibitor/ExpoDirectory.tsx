@@ -14,7 +14,6 @@ import {
   Select,
   MenuItem,
   Chip,
-  Alert,
 } from '@mui/material';
 import { Add, Search } from '@mui/icons-material';
 import { useExhibitorStore } from '../../stores/exhibitorStore';
@@ -59,7 +58,7 @@ export default function ExpoDirectory({ onRegister }: ExpoDirectoryProps) {
       const searchLower = searchTerm.toLowerCase();
       return (
         expo.title.toLowerCase().includes(searchLower) ||
-        expo.theme?.toLowerCase().includes(searchLower) ||
+        (expo as any).theme?.toLowerCase().includes(searchLower) ||
         expo.location.city.toLowerCase().includes(searchLower)
       );
     }
@@ -190,9 +189,9 @@ export default function ExpoDirectory({ onRegister }: ExpoDirectoryProps) {
                       />
                     </Box>
 
-                    {expo.theme && (
+                    {(expo as any).theme && (
                       <Typography variant="body2" sx={{ color: activeTheme.textSecondary, mb: 1.5, fontWeight: 600 }}>
-                        Theme: <span style={{ color: activeTheme.textPrimary }}>{expo.theme}</span>
+                        Theme: <span style={{ color: activeTheme.textPrimary }}>{(expo as any).theme}</span>
                       </Typography>
                     )}
 
@@ -208,7 +207,6 @@ export default function ExpoDirectory({ onRegister }: ExpoDirectoryProps) {
                         <span style={{ fontWeight: 700, color: activeTheme.textPrimary }}>Location:</span> {expo.location.city}, {expo.location.country}
                       </Typography>
                     )}
-                  </Box>
                   </Box>
 
                   <Box sx={{ mt: 'auto', pt: 3, px: 3, pb: 3, borderTop: `1px solid ${activeTheme.border}`, display: 'flex', justifyContent: 'flex-end' }}>

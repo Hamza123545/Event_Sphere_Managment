@@ -83,12 +83,18 @@ export default function AttendeeRegistrationForm({
     const validDietary = dietaryRestrictions.filter((d) => d.trim());
 
     try {
-      await registerForExpo(expoId, {
-        preferences: {
-          interests: validInterests.length > 0 ? validInterests : undefined,
-          dietaryRestrictions: validDietary.length > 0 ? validDietary : undefined,
-        },
-      });
+      const preferences: { interests?: string[]; dietaryRestrictions?: string[] } = {};
+      if (validInterests.length > 0) {
+        preferences.interests = validInterests;
+      }
+      if (validDietary.length > 0) {
+        preferences.dietaryRestrictions = validDietary;
+      }
+      const request: { preferences?: { interests?: string[]; dietaryRestrictions?: string[] } } = {};
+      if (Object.keys(preferences).length > 0) {
+        request.preferences = preferences;
+      }
+      await registerForExpo(expoId, request as any);
 
       // Reset form
       setInterests(['']);

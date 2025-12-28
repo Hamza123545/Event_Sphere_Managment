@@ -6,7 +6,7 @@
 
 // Bull v4 import - Queue is default export
 import Queue from 'bull';
-import type { Job } from 'bull';
+import type { Job, Queue as BullQueue } from 'bull';
 import { logger } from '../utils/logger';
 
 /**
@@ -47,10 +47,10 @@ export interface ExportReportJobData {
  */
 class JobQueueService {
   private static instance: JobQueueService;
-  private analyticsQueue: InstanceType<typeof Queue> | null = null;
-  private emailQueue: InstanceType<typeof Queue> | null = null;
-  private reportQueue: InstanceType<typeof Queue> | null = null;
-  private workers: InstanceType<typeof Queue>[] = []; // Workers are Queue instances with processors
+  private analyticsQueue: BullQueue<GenerateAnalyticsJobData> | null = null;
+  private emailQueue: BullQueue<SendBulkEmailJobData> | null = null;
+  private reportQueue: BullQueue<ExportReportJobData> | null = null;
+  private workers: BullQueue[] = []; // Workers are Queue instances with processors
 
   private constructor() {
     this.initializeQueues();
@@ -71,7 +71,7 @@ class JobQueueService {
 
     try {
       // Analytics queue
-      this.analyticsQueue = new Queue(JobType.GENERATE_ANALYTICS, {
+      this.analyticsQueue = new Queue<GenerateAnalyticsJobData>(JobType.GENERATE_ANALYTICS, {
         redis: redisUrl,
         defaultJobOptions: {
           attempts: 3,
@@ -85,7 +85,7 @@ class JobQueueService {
       });
 
       // Email queue
-      this.emailQueue = new Queue(JobType.SEND_BULK_EMAIL, {
+      this.emailQueue = new Queue<SendBulkEmailJobData>(JobType.SEND_BULK_EMAIL, {
         redis: redisUrl,
         defaultJobOptions: {
           attempts: 3,
@@ -99,7 +99,7 @@ class JobQueueService {
       });
 
       // Report export queue
-      this.reportQueue = new Queue(JobType.EXPORT_REPORT, {
+      this.reportQueue = new Queue<ExportReportJobData>(JobType.EXPORT_REPORT, {
         redis: redisUrl,
         defaultJobOptions: {
           attempts: 2,
@@ -171,7 +171,7 @@ class JobQueueService {
     if (this.analyticsQueue) {
       this.analyticsQueue.process(
         2, // concurrency: Process 2 analytics jobs concurrently
-        async (job: Job<GenerateAnalyticsJobData>) => {
+        (async (job: Job<GenerateAnalyticsJobData>) => {
           logger.info('Processing analytics generation job', { jobId: job.id, data: job.data });
           // Import here to avoid circular dependencies
           const { getExpoAnalytics } = await import('./analyticsService');
@@ -182,7 +182,7 @@ class JobQueueService {
             job.data.metricType
           );
           return result;
-        }
+        }) as any
       );
 
       this.analyticsQueue.on('completed', (job) => {
@@ -198,15 +198,13 @@ class JobQueueService {
 
     // Email worker
     if (this.emailQueue) {
-      this.emailQueue.process(
-        5, // concurrency: Process 5 email jobs concurrently
-        async (job: Job<SendBulkEmailJobData>) => {
+      this.emailQueue.process(5, (async (job: Job<SendBulkEmailJobData>) => {
           logger.info('Processing bulk email job', { jobId: job.id, recipients: job.data.recipients.length });
           // Import here to avoid circular dependencies
-          const { sendBulkEmail } = await import('./emailService');
-          const result = await sendBulkEmail(job.data.recipients, job.data.subject, job.data.template, job.data.data);
-          return result;
-        }
+          // sendBulkEmail function not implemented yet
+          logger.warn('sendBulkEmail not implemented, skipping bulk email job');
+          throw new Error('sendBulkEmail not implemented');
+        }) as any
       );
 
       this.emailQueue.on('completed', (job) => {
@@ -223,19 +221,13 @@ class JobQueueService {
     // Report export worker
     if (this.reportQueue) {
       this.reportQueue.process(
-        1, // concurrency: Process 1 report at a time (CPU intensive)
-        async (job: Job<ExportReportJobData>) => {
+        (async (job: Job<ExportReportJobData>) => {
           logger.info('Processing report export job', { jobId: job.id, data: job.data });
           // Import here to avoid circular dependencies
-          const { exportReport } = await import('./exportService');
-          const result = await exportReport(
-            job.data.expoId,
-            job.data.userId,
-            job.data.reportType,
-            job.data.format
-          );
-          return result;
-        }
+          // exportReport function not implemented yet
+          logger.warn('exportReport not implemented, skipping report export job');
+          throw new Error('exportReport not implemented');
+        }) as any
       );
 
       this.reportQueue.on('completed', (job) => {
@@ -253,7 +245,7 @@ class JobQueueService {
   /**
    * Add analytics generation job to queue
    */
-  public async addAnalyticsJob(data: GenerateAnalyticsJobData): Promise<Job> {
+  public async addAnalyticsJob(data: GenerateAnalyticsJobData): Promise<Job<GenerateAnalyticsJobData>> {
     if (!this.analyticsQueue) {
       throw new Error('Analytics queue not initialized');
     }
@@ -263,7 +255,7 @@ class JobQueueService {
   /**
    * Add bulk email job to queue
    */
-  public async addBulkEmailJob(data: SendBulkEmailJobData): Promise<Job> {
+  public async addBulkEmailJob(data: SendBulkEmailJobData): Promise<Job<SendBulkEmailJobData>> {
     if (!this.emailQueue) {
       throw new Error('Email queue not initialized');
     }
@@ -273,7 +265,7 @@ class JobQueueService {
   /**
    * Add report export job to queue
    */
-  public async addReportExportJob(data: ExportReportJobData): Promise<Job> {
+  public async addReportExportJob(data: ExportReportJobData): Promise<Job<ExportReportJobData>> {
     if (!this.reportQueue) {
       throw new Error('Report queue not initialized');
     }

@@ -4,7 +4,7 @@
  * Implements T203
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Popover,
   Typography,

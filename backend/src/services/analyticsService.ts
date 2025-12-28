@@ -11,7 +11,6 @@ import { ExpoEvent } from '../models/ExpoEvent';
 import { BoothSpace } from '../models/BoothSpace';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
-import { AnalyticsData } from '../models/AnalyticsData';
 
 // Simple in-memory cache (T182)
 const analyticsCache = new Map<string, { data: any; timestamp: number }>();
@@ -48,7 +47,7 @@ interface EngagementRateMetrics {
   engagementRate: number; // percentage
 }
 
-interface AnalyticsResult {
+export interface AnalyticsResult {
   expoId: string;
   expoTitle: string;
   attendeeCount?: AttendeeCountMetrics;
@@ -220,35 +219,7 @@ export async function calculateSessionPopularity(expoId: string): Promise<Sessio
  * Implements T178, T179
  */
 export async function calculateBoothTraffic(expoId: string): Promise<BoothTrafficMetrics> {
-  // Get booth counts by status (T179)
-  const pipeline = [
-    {
-      $lookup: {
-        from: 'floorplans',
-        localField: '_id',
-        foreignField: 'expo',
-        as: 'floorPlan',
-      },
-    },
-    { $unwind: { path: '$floorPlan', preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: 'boothspaces',
-        localField: 'floorPlan._id',
-        foreignField: 'floorPlan',
-        as: 'booths',
-      },
-    },
-    { $unwind: '$booths' },
-    {
-      $group: {
-        _id: '$booths.status',
-        count: { $sum: 1 },
-      },
-    },
-  ];
-
-  // Alternative: Direct query on BoothSpace via FloorPlan
+  // Direct query on BoothSpace via FloorPlan
   const floorPlan = await (await import('../models/FloorPlan')).FloorPlan.findOne({ expo: expoId });
   if (!floorPlan) {
     return {

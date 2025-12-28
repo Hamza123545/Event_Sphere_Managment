@@ -338,7 +338,7 @@ export async function assignFeedback(
       throw new CustomError('Feedback not found', 404, 'FEEDBACK_NOT_FOUND');
     }
 
-    feedback.assignedTo = assignedToUserId;
+    feedback.assignedTo = assignedToUserId as any;
     // Auto-update status to reviewed when assigned
     if (feedback.status === 'pending') {
       feedback.status = 'reviewed';

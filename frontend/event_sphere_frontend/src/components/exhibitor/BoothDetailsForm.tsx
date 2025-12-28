@@ -47,16 +47,28 @@ export default function BoothDetailsForm({
     { name: '', role: '', email: '' },
   ]);
 
+  // Initialize form data when booth or open state changes
   useEffect(() => {
-    if (booth && open) {
-      setProductsShowcased(booth.productsShowcased && booth.productsShowcased.length > 0 ? booth.productsShowcased : ['']);
-      setStaff(
-        booth.staff && booth.staff.length > 0
-          ? booth.staff
-          : [{ name: '', role: '', email: '' }]
-      );
+    if (!booth || !open) {
+      return;
     }
-  }, [booth, open]);
+    
+    const products = booth.productsShowcased && booth.productsShowcased.length > 0 
+      ? booth.productsShowcased 
+      : [''];
+    const staffMembers = booth.staff && booth.staff.length > 0
+      ? booth.staff
+      : [{ name: '', role: '', email: '' }];
+    
+    // Initialize form state from props - using setTimeout to defer state updates
+    const timer = setTimeout(() => {
+      setProductsShowcased(products);
+      setStaff(staffMembers);
+    }, 0);
+    
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, booth?.identifier]);
 
   const handleProductChange = (index: number, value: string) => {
     const updated = [...productsShowcased];
@@ -105,7 +117,7 @@ export default function BoothDetailsForm({
       await updateBoothDetails(profileId, data);
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch{
       // Error handled by store
     }
   };

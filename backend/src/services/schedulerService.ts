@@ -8,7 +8,6 @@
 import * as cron from 'node-cron';
 import logger from '../utils/logger';
 import { SessionBookmark } from '../models/SessionBookmark';
-import { Session } from '../models/Session';
 import { sendSessionReminder } from './notificationService';
 
 let reminderJob: cron.ScheduledTask | null = null;

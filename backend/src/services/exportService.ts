@@ -44,7 +44,7 @@ export async function generatePDF(analytics: AnalyticsResult): Promise<Buffer> {
         doc.fontSize(16).text('Session Popularity', { underline: true });
         doc.moveDown(0.5);
         doc.fontSize(12);
-        analytics.sessionPopularity.sessions.forEach((session, index) => {
+        analytics.sessionPopularity.sessions.forEach((session: { title: string; registrations: number; capacity: number; utilizationRate: number }, index: number) => {
           doc.text(`${index + 1}. ${session.title}`, { indent: 20 });
           doc.text(`   Registrations: ${session.registrations}`, { indent: 40 });
           doc.text(`   Capacity: ${session.capacity}`, { indent: 40 });
@@ -111,7 +111,7 @@ export async function generateCSV(analytics: AnalyticsResult): Promise<string> {
   if (analytics.sessionPopularity) {
     lines.push('Session Popularity');
     lines.push('Session Title,Registrations,Capacity,Utilization Rate (%)');
-    analytics.sessionPopularity.sessions.forEach((session) => {
+    analytics.sessionPopularity.sessions.forEach((session: { title: string; registrations: number; capacity: number; utilizationRate: number }) => {
       lines.push(`"${session.title}",${session.registrations},${session.capacity},${session.utilizationRate}`);
     });
     lines.push('');

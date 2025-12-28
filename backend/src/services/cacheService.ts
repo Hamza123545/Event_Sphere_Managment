@@ -116,7 +116,7 @@ class CacheService {
       const serialized = JSON.stringify(value);
 
       if (this.isRedisConnected && this.redisClient) {
-        await this.redisClient.setEx(key, serialized, ttl);
+        await this.redisClient.setEx(key, ttl, serialized);
       } else {
         // Fallback to memory cache
         this.memoryCache.set(key, {

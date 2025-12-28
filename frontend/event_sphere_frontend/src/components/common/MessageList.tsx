@@ -4,8 +4,8 @@
  * Implements T171
  */
 
-import { List, ListItem, ListItemButton, ListItemText, Chip, Avatar, Box, Typography, Divider } from '@mui/material';
-import { Email, Draft, CheckCircle } from '@mui/icons-material';
+import { List, ListItem, ListItemButton, ListItemText, Chip, Avatar, Box, Typography } from '@mui/material';
+import { CheckCircle } from '@mui/icons-material';
 import type { Message } from '../../types/messaging';
 import {
   GlassCard,
@@ -20,19 +20,7 @@ interface MessageListProps {
   isLoading?: boolean;
 }
 
-export default function MessageList({ messages, onMessageClick, selectedMessageId, isLoading = false }: MessageListProps) {
-  const getContextColor = (context: string): 'default' | 'primary' | 'secondary' | 'success' | 'warning' => {
-    switch (context) {
-      case 'exhibitor-collaboration':
-        return 'primary';
-      case 'support-request':
-        return 'warning';
-      case 'organizer-communication':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
+export default function MessageList({ messages, onMessageClick, selectedMessageId }: MessageListProps) {
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);

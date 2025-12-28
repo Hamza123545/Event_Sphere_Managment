@@ -1,11 +1,10 @@
 /**
  * Public Navigation Bar Component
- * Used for landing page, about, contact pages
- * Shows Login/Signup when not authenticated, user menu when authenticated
+ * Dark cinematic design matching landing page
  */
 
 import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -29,8 +28,6 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { logout as logoutApi } from '../../services/authApi';
 import { disconnectSocket } from '../../services/socket';
-import { getActiveTheme } from '../../theme/designSystem';
-import { useThemeStore } from '../../stores/themeStore';
 
 interface Props {
   window?: () => Window;
@@ -52,9 +49,8 @@ function HideOnScroll(props: Props) {
 
 export default function PublicNavbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout: logoutStore, isAuthenticated } = useAuthStore();
-  const { mode } = useThemeStore();
-  const theme = getActiveTheme(mode);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -100,19 +96,12 @@ export default function PublicNavbar() {
   const handleNavClick = (path: string, e: React.MouseEvent) => {
     if (path.startsWith('#')) {
       e.preventDefault();
-      const element = document.querySelector(path);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else if (window.location.pathname === '/') {
-        // If on home page but element not found yet, wait a bit
-        setTimeout(() => {
-          const element = document.querySelector(path);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
+      if (location.pathname === '/') {
+        const element = document.querySelector(path);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       } else {
-        // Navigate to home and then scroll
         navigate(`/${path}`);
       }
     }
@@ -121,9 +110,14 @@ export default function PublicNavbar() {
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'About Us', path: '/about' },
-    { label: 'Services', path: '#services' },
+    { label: 'Services', path: '/services' },
     { label: 'Contact', path: '/contact' },
   ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname === path;
+  };
 
   return (
     <>
@@ -131,14 +125,14 @@ export default function PublicNavbar() {
         <AppBar
           position="sticky"
           sx={{
-            background: `linear-gradient(135deg, ${theme.surface} 0%, ${theme.surfaceLight} 100%)`,
+            background: 'rgba(5, 5, 5, 0.8)',
             backdropFilter: 'blur(20px)',
-            boxShadow: `0 4px 20px rgba(0, 0, 0, 0.1)`,
-            borderBottom: `1px solid ${theme.border}`,
+            boxShadow: 'none',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
           }}
         >
           <Container maxWidth="xl">
-            <Toolbar sx={{ py: 1, justifyContent: 'space-between' }}>
+            <Toolbar sx={{ py: 1.5, justifyContent: 'space-between' }}>
               {/* Logo */}
               <Box
                 component={RouterLink}
@@ -153,20 +147,21 @@ export default function PublicNavbar() {
                 <Typography
                   variant="h5"
                   sx={{
-                    fontWeight: 800,
-                    background: `linear-gradient(135deg, ${theme.accent} 0%, #a78bfa 100%)`,
+                    fontWeight: 900,
+                    background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    letterSpacing: '-0.5px',
+                    letterSpacing: '-0.02em',
+                    fontSize: '1.5rem',
                   }}
                 >
-                  EventSphere
+                  EVENTSPHERE
                 </Typography>
               </Box>
 
               {/* Desktop Navigation */}
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 4 }}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
                 {navLinks.map((link) => (
                   <Button
                     key={link.path}
@@ -175,12 +170,26 @@ export default function PublicNavbar() {
                     href={link.path.startsWith('#') ? link.path : undefined}
                     onClick={link.path.startsWith('#') ? (e) => handleNavClick(link.path, e) : undefined}
                     sx={{
-                      color: theme.textSecondary,
-                      fontWeight: 600,
+                      color: isActive(link.path) ? '#7c3aed' : 'rgba(255, 255, 255, 0.7)',
+                      fontWeight: isActive(link.path) ? 700 : 500,
                       fontSize: '0.95rem',
                       textTransform: 'none',
+                      px: 2.5,
+                      py: 1,
+                      position: 'relative',
+                      '&::after': isActive(link.path) ? {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '60%',
+                        height: 2,
+                        background: 'linear-gradient(90deg, #7c3aed, #ec4899)',
+                        borderRadius: 2,
+                      } : {},
                       '&:hover': {
-                        color: theme.accent,
+                        color: '#7c3aed',
                         backgroundColor: 'transparent',
                       },
                     }}
@@ -194,12 +203,13 @@ export default function PublicNavbar() {
                     <Button
                       onClick={handleDashboard}
                       sx={{
-                        color: theme.textSecondary,
+                        color: 'rgba(255, 255, 255, 0.7)',
                         fontWeight: 600,
                         fontSize: '0.95rem',
                         textTransform: 'none',
+                        px: 2.5,
                         '&:hover': {
-                          color: theme.accent,
+                          color: '#7c3aed',
                           backgroundColor: 'transparent',
                         },
                       }}
@@ -210,22 +220,22 @@ export default function PublicNavbar() {
                       onClick={handleMenuOpen}
                       sx={{
                         ml: 1,
-                        border: `1px solid ${theme.border}`,
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
                         '&:hover': {
-                          borderColor: theme.accent,
+                          borderColor: '#7c3aed',
                         },
                       }}
                     >
-                    <Avatar
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        bgcolor: theme.accent,
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      {user.profile?.firstName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
-                    </Avatar>
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: '#7c3aed',
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        {user.profile?.firstName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                      </Avatar>
                     </IconButton>
                   </>
                 ) : (
@@ -234,12 +244,13 @@ export default function PublicNavbar() {
                       component={RouterLink}
                       to="/login"
                       sx={{
-                        color: theme.textSecondary,
+                        color: 'rgba(255, 255, 255, 0.7)',
                         fontWeight: 600,
                         fontSize: '0.95rem',
                         textTransform: 'none',
+                        px: 2.5,
                         '&:hover': {
-                          color: theme.accent,
+                          color: '#7c3aed',
                           backgroundColor: 'transparent',
                         },
                       }}
@@ -251,18 +262,21 @@ export default function PublicNavbar() {
                       to="/register"
                       variant="contained"
                       sx={{
-                        background: `linear-gradient(135deg, ${theme.accent} 0%, #7c3aed 100%)`,
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
                         color: '#fff',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         fontSize: '0.95rem',
                         textTransform: 'none',
                         px: 3,
-                        borderRadius: '12px',
-                        boxShadow: `0 4px 14px ${theme.accentGlow}`,
+                        py: 1,
+                        borderRadius: '100px',
+                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)',
                         '&:hover': {
-                          background: `linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)`,
-                          boxShadow: `0 6px 20px ${theme.accentGlow}`,
+                          background: 'linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)',
+                          boxShadow: '0 6px 20px rgba(124, 58, 237, 0.5)',
+                          transform: 'translateY(-1px)',
                         },
+                        transition: 'all 0.3s ease',
                       }}
                     >
                       Sign Up
@@ -277,7 +291,7 @@ export default function PublicNavbar() {
                 color="inherit"
                 aria-label="menu"
                 onClick={handleMobileMenuOpen}
-                sx={{ display: { xs: 'block', md: 'none' } }}
+                sx={{ display: { xs: 'block', md: 'none' }, color: 'white' }}
               >
                 <MenuIcon />
               </IconButton>
@@ -303,10 +317,11 @@ export default function PublicNavbar() {
           sx: {
             mt: 1.5,
             minWidth: 200,
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
-            borderRadius: '12px',
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+            background: 'rgba(5, 5, 5, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(20px)',
           },
         }}
       >
@@ -316,31 +331,31 @@ export default function PublicNavbar() {
               sx={{
                 width: 32,
                 height: 32,
-                bgcolor: theme.accent,
+                bgcolor: '#7c3aed',
                 fontSize: '0.875rem',
               }}
             >
               {user?.profile?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </Avatar>
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: theme.textPrimary }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
                 {user?.profile?.firstName 
                   ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
                   : user?.email?.split('@')[0] || 'User'}
               </Typography>
-              <Typography variant="caption" sx={{ color: theme.textSecondary }}>
+              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
                 {user?.email}
               </Typography>
             </Box>
           </Box>
         </MenuItem>
-        <Divider sx={{ borderColor: theme.border }} />
+        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 1 }} />
         <MenuItem
           onClick={handleDashboard}
           sx={{
             py: 1.5,
-            color: theme.textPrimary,
-            '&:hover': { backgroundColor: theme.surfaceLight },
+            color: 'white',
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
           }}
         >
           <Dashboard sx={{ mr: 1.5, fontSize: '1.25rem' }} />
@@ -350,8 +365,8 @@ export default function PublicNavbar() {
           onClick={handleLogout}
           sx={{
             py: 1.5,
-            color: theme.error,
-            '&:hover': { backgroundColor: theme.surfaceLight },
+            color: '#ef4444',
+            '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
           }}
         >
           <ExitToApp sx={{ mr: 1.5, fontSize: '1.25rem' }} />
@@ -368,10 +383,11 @@ export default function PublicNavbar() {
           sx: {
             mt: 1.5,
             minWidth: 250,
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
-            borderRadius: '12px',
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+            background: 'rgba(5, 5, 5, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(20px)',
           },
         }}
       >
@@ -389,8 +405,9 @@ export default function PublicNavbar() {
             }}
             sx={{
               py: 1.5,
-              color: theme.textPrimary,
-              '&:hover': { backgroundColor: theme.surfaceLight },
+              color: isActive(link.path) ? '#7c3aed' : 'white',
+              fontWeight: isActive(link.path) ? 700 : 500,
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
             }}
           >
             {link.label}
@@ -398,13 +415,13 @@ export default function PublicNavbar() {
         ))}
         {isAuthenticated && user ? (
           <>
-            <Divider sx={{ borderColor: theme.border, my: 1 }} />
+            <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 1 }} />
             <MenuItem
               onClick={handleDashboard}
               sx={{
                 py: 1.5,
-                color: theme.textPrimary,
-                '&:hover': { backgroundColor: theme.surfaceLight },
+                color: 'white',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
               }}
             >
               <Dashboard sx={{ mr: 1.5 }} />
@@ -414,8 +431,8 @@ export default function PublicNavbar() {
               onClick={handleLogout}
               sx={{
                 py: 1.5,
-                color: theme.error,
-                '&:hover': { backgroundColor: theme.surfaceLight },
+                color: '#ef4444',
+                '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
               }}
             >
               <ExitToApp sx={{ mr: 1.5 }} />
@@ -424,15 +441,15 @@ export default function PublicNavbar() {
           </>
         ) : (
           <>
-            <Divider sx={{ borderColor: theme.border, my: 1 }} />
+            <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 1 }} />
             <MenuItem
               component={RouterLink}
               to="/login"
               onClick={handleMobileMenuClose}
               sx={{
                 py: 1.5,
-                color: theme.textPrimary,
-                '&:hover': { backgroundColor: theme.surfaceLight },
+                color: 'white',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
               }}
             >
               Login
@@ -443,9 +460,9 @@ export default function PublicNavbar() {
               onClick={handleMobileMenuClose}
               sx={{
                 py: 1.5,
-                color: theme.accent,
-                fontWeight: 600,
-                '&:hover': { backgroundColor: theme.surfaceLight },
+                color: '#7c3aed',
+                fontWeight: 700,
+                '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.1)' },
               }}
             >
               Sign Up

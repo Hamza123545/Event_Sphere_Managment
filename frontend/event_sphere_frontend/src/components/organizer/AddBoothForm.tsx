@@ -101,9 +101,10 @@ export default function AddBoothForm({
   };
 
   const handleAmenityChange = (amenity: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentAmenities = formData.amenities || [];
     const amenities = e.target.checked
-      ? [...formData.amenities, amenity]
-      : formData.amenities.filter((a) => a !== amenity);
+      ? [...currentAmenities, amenity]
+      : currentAmenities.filter((a) => a !== amenity);
     setFormData({ ...formData, amenities });
   };
 
@@ -336,7 +337,7 @@ export default function AddBoothForm({
                       key={amenity}
                       control={
                         <Checkbox
-                          checked={formData.amenities.includes(amenity)}
+                          checked={(formData.amenities || []).includes(amenity)}
                           onChange={handleAmenityChange(amenity)}
                           disabled={isLoading}
                           sx={{

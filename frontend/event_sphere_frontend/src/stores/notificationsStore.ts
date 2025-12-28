@@ -37,14 +37,22 @@ export const useNotificationsStore = create<NotificationsState>()(
       let socketListenersInitialized = false;
       let socket: ReturnType<typeof getSocket> | null = null;
 
-      const initializeSocketListeners = () => {
-        if (socketListenersInitialized) return;
+      const setupListeners = () => {
+        if (!socket || !socket.connected) {
+          console.log('[Notifications] Socket not connected, skipping listener setup');
+          return;
+        }
 
-        socket = getSocket();
-        if (!socket) return;
+        // Remove existing listeners first to avoid duplicates
+        socket.off('session-reminder');
+        socket.off('schedule-changed');
+        socket.off('expo-updated');
+        socket.off('exhibitor-approved');
+        socket.off('exhibitor-rejected');
 
         // Listen for session-reminder event (T205)
         socket.on('session-reminder', (data: Notification) => {
+          console.log('[Notifications] Received session-reminder:', data);
           get().addNotification(data);
           showNotificationToast(data);
 
@@ -57,7 +65,7 @@ export const useNotificationsStore = create<NotificationsState>()(
               audio.play().catch(() => {
                 // Ignore errors if audio file doesn't exist or can't play
               });
-            } catch (error) {
+            } catch {
               // Ignore audio errors
             }
           }
@@ -65,39 +73,88 @@ export const useNotificationsStore = create<NotificationsState>()(
 
         // Listen for schedule-changed event (T205)
         socket.on('schedule-changed', (data: Notification) => {
+          console.log('[Notifications] Received schedule-changed:', data);
           get().addNotification(data);
           showNotificationToast(data); // Critical update - always show toast
         });
 
         // Listen for expo-updated event (T205)
         socket.on('expo-updated', (data: Notification) => {
+          console.log('[Notifications] Received expo-updated:', data);
           get().addNotification(data);
           showNotificationToast(data); // Critical update - always show toast
         });
 
         // Listen for exhibitor-approved event
         socket.on('exhibitor-approved', (data: Notification) => {
+          console.log('[Notifications] Received exhibitor-approved:', data);
           get().addNotification(data);
           showNotificationToast(data);
         });
 
         // Listen for exhibitor-rejected event
         socket.on('exhibitor-rejected', (data: Notification) => {
+          console.log('[Notifications] Received exhibitor-rejected:', data);
           get().addNotification(data);
           showNotificationToast(data);
         });
 
+        console.log('[Notifications] Socket listeners initialized successfully');
         socketListenersInitialized = true;
+      };
+
+      const initializeSocketListeners = () => {
+        socket = getSocket();
+        if (!socket) {
+          console.log('[Notifications] Socket not available, will retry on connect');
+          return;
+        }
+
+        // If socket is already connected, set up listeners immediately
+        if (socket.connected) {
+          setupListeners();
+        } else {
+          // Otherwise, wait for connection
+          const handleConnect = () => {
+            console.log('[Notifications] Socket connected, setting up listeners');
+            setupListeners();
+          };
+          
+          // Set up listeners on connect (fires on both initial connect and reconnect)
+          socket.on('connect', handleConnect);
+          
+          // Also handle explicit reconnection events
+          socket.on('reconnect', () => {
+            console.log('[Notifications] Socket reconnected, re-initializing listeners');
+            socketListenersInitialized = false; // Allow re-initialization
+            setupListeners();
+          });
+          
+          // Poll for connection if not already connected (fallback)
+          const checkConnection = setInterval(() => {
+            socket = getSocket(); // Refresh socket reference
+            if (socket?.connected && !socketListenersInitialized) {
+              setupListeners();
+              clearInterval(checkConnection);
+            }
+          }, 500);
+          
+          // Clear interval after 10 seconds
+          setTimeout(() => clearInterval(checkConnection), 10000);
+        }
       };
 
       const removeSocketListeners = () => {
         if (!socket) return;
 
+        console.log('[Notifications] Removing socket listeners');
         socket.off('session-reminder');
         socket.off('schedule-changed');
         socket.off('expo-updated');
         socket.off('exhibitor-approved');
         socket.off('exhibitor-rejected');
+        socket.off('connect');
+        socket.off('reconnect');
 
         socketListenersInitialized = false;
         socket = null;

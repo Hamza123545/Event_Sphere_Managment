@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: EventSphere Attendee API
+  version: 1.0.0
+  description: Attendee registration, expo browsing, and session bookmarking
+servers:
+  - url: /api/v1
+    description: API Base URL
+paths:
+  /attendees/register:
+    post:
+      summary: Register for an expo
+      tags: [Attendees]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expoId:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: Registration successful
+  /attendees/expos:
+    get:
+      summary: List available expos
+      tags: [Attendees]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of expos
+  /attendees/sessions/bookmark:
+    post:
+      summary: Bookmark a session
+      tags: [Attendees]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+      responses:
+        '201':
+          description: Session bookmarked
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+

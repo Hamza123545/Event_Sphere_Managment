@@ -53,8 +53,14 @@ export default function EditProfileForm({
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Initialize form data when profile or open state changes
   useEffect(() => {
-    if (profile && open) {
+    if (!profile || !open) {
+      return;
+    }
+    
+    // Initialize form state from props - using setTimeout to defer state updates
+    const timer = setTimeout(() => {
       setFormData({
         companyName: profile.companyName,
         description: profile.description,
@@ -67,8 +73,11 @@ export default function EditProfileForm({
       setLogoFile(null);
       setDocumentFiles([]);
       setErrors({});
-    }
-  }, [profile, open]);
+    }, 0);
+    
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, profile?.profileId]);
 
   if (!profile) return null;
 

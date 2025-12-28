@@ -188,12 +188,11 @@ router.get('/spec/:filename', (req: Request, res: Response) => {
   const normalizedPath = path.normalize(filePath);
   const normalizedDir = path.normalize(contractsDir);
   if (!normalizedPath.startsWith(normalizedDir)) {
-    res.status(403).json({ error: 'Access denied' });
-    return;
+    return res.status(403).json({ error: 'Access denied' });
   }
 
   res.setHeader('Content-Type', 'application/x-yaml');
-  res.sendFile(filePath);
+  return res.sendFile(filePath);
 });
 
 /**

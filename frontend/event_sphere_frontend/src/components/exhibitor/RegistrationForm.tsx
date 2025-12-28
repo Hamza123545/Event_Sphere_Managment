@@ -25,7 +25,6 @@ import type { RegisterForExpoRequest } from '../../types/exhibitor';
 import {
   ActionButton,
   activeTheme,
-  GlassCard,
 } from '../../theme/designSystem';
 
 interface RegistrationFormProps {
@@ -56,7 +55,7 @@ export default function RegistrationForm({
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress] = useState(0);
 
   const handleChange = (field: keyof RegisterForExpoRequest) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

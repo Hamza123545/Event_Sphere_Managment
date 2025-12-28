@@ -37,7 +37,7 @@ async function seedDatabase(): Promise<void> {
     const exhibitorPassword = await bcrypt.hash('exhibitor123', 10);
     const attendeePassword = await bcrypt.hash('attendee123', 10);
 
-    const admin = await User.findOneAndUpdate(
+    await User.findOneAndUpdate(
       { email: 'admin@eventsphere.com' },
       {
         email: 'admin@eventsphere.com',

@@ -268,11 +268,11 @@ export function offSocketEvent(event: string, callback?: (data: unknown) => void
  * Subscribe to expo updates with callback handlers
  */
 export interface ExpoUpdateCallbacks {
-  onScheduleChanged?: (event: any) => void;
-  onSessionDeleted?: (event: any) => void;
-  onExpoUpdated?: (event: any) => void;
-  onBoothAllocated?: (event: any) => void;
-  onBoothReleased?: (event: any) => void;
+  onScheduleChanged?: (event: { expoId: string; session: unknown; schedule?: unknown; location?: unknown; changeType?: string }) => void;
+  onSessionDeleted?: (event: { expoId: string; sessionId: string }) => void;
+  onExpoUpdated?: (event: { expoId: string; changes?: unknown[]; expo?: unknown }) => void;
+  onBoothAllocated?: (event: { expoId: string; boothId: string; exhibitorId: string }) => void;
+  onBoothReleased?: (event: { expoId: string; boothId: string }) => void;
 }
 
 export function subscribeToExpoUpdates(expoId: string, callbacks: ExpoUpdateCallbacks): void {

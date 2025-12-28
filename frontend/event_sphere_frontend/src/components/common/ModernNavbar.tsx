@@ -71,8 +71,13 @@ export default function ModernNavbar({ navItems = [], onCreateExpo }: ModernNavb
   // Initialize notification socket listeners
   useEffect(() => {
     if (user?.userId) {
-      initializeSocketListeners();
+      // Delay slightly to ensure socket connection is established
+      const timer = setTimeout(() => {
+        initializeSocketListeners();
+      }, 100);
+      return () => clearTimeout(timer);
     }
+    return undefined;
   }, [user?.userId, initializeSocketListeners]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

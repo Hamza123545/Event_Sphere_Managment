@@ -282,12 +282,12 @@ export async function assignExhibitorToBooth(
     const previousStatus = booth.status;
 
     // Assign booth (transaction-like operation)
-    booth.exhibitor = profile._id;
+    booth.exhibitor = profile._id as any;
     booth.status = 'occupied';
     await booth.save();
 
     // Update profile
-    profile.booth = booth._id;
+    profile.booth = booth._id as any;
     await profile.save();
 
     // Update floor plan metadata

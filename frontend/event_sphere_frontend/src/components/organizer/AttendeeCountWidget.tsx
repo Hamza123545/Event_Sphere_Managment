@@ -90,7 +90,7 @@ export default function AttendeeCountWidget({ data }: AttendeeCountWidgetProps) 
                   fill={activeTheme.accent}
                   dataKey="value"
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index]} />
                   ))}
                 </Pie>

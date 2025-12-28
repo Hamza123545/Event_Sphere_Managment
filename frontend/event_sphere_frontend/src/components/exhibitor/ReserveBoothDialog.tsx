@@ -35,7 +35,6 @@ interface ReserveBoothDialogProps {
 export default function ReserveBoothDialog({
   open,
   booth,
-  profileId,
   onConfirm,
   onCancel,
   isLoading = false,

@@ -25,11 +25,6 @@ import {
   validateBoothSize,
   validateBoothLocation,
   validateBoothPriceTier,
-  validateRecipientId,
-  validateMessageSubject,
-  validateMessageContent,
-  validateMessageContext,
-  validateRelatedExpoId,
 } from '../middleware/validator';
 import { asyncHandler } from '../middleware/errorHandler';
 import { uploadFloorPlanImage, uploadExpoImage, handleUploadError } from '../middleware/upload';

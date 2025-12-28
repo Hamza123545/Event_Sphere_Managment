@@ -17,7 +17,7 @@ interface MessageThreadProps {
   onReply?: () => void;
 }
 
-export default function MessageThread({ message, onReply }: MessageThreadProps) {
+export default function MessageThread({ message }: MessageThreadProps) {
   const formatFullTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleString('en-US', {

@@ -31,8 +31,9 @@ export function showNotificationToast(notification: Notification): void {
   const title = getTitle(notification);
   const variant = getVariant(notification);
 
-  // Show toast notification
-  showToast(`${title}: ${message}`, variant);
+  // Show toast notification - convert 'default' to 'info'
+  const toastVariant = variant === 'default' ? 'info' : variant;
+  showToast(`${title}: ${message}`, toastVariant);
 
   // For critical updates, also show browser notification if available
   if (isCritical(notification) && 'Notification' in window) {
@@ -76,13 +77,6 @@ function getVariant(notification: Notification): 'default' | 'error' | 'warning'
   }
 }
 
-function getAutoHideDuration(notification: Notification): number {
-  // Critical notifications stay longer
-  if (isCritical(notification)) {
-    return 10000; // 10 seconds
-  }
-  return 6000; // 6 seconds
-}
 
 function isCritical(notification: Notification): boolean {
   return (

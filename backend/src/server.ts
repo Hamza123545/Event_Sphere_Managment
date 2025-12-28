@@ -10,7 +10,7 @@ import { startScheduler } from './services/schedulerService';
 import cacheService from './services/cacheService';
 import jobQueue from './services/jobQueue';
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 7860;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {

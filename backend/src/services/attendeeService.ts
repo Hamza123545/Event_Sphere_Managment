@@ -6,7 +6,7 @@
 
 import { ExpoEvent } from '../models/ExpoEvent';
 import { ExhibitorProfile } from '../models/ExhibitorProfile';
-import { AttendeeRegistration, IAttendeeRegistration } from '../models/AttendeeRegistration';
+import { AttendeeRegistration } from '../models/AttendeeRegistration';
 import { FloorPlan } from '../models/FloorPlan';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';

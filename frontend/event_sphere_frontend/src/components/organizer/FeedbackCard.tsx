@@ -32,27 +32,19 @@ export default function FeedbackCard({ feedback, onRespond, onAssign }: Feedback
     }
   };
 
-  const getStatusColor = (): 'default' | 'primary' | 'success' | 'warning' | 'error' => {
+  const getStatusColorValue = () => {
     switch (feedback.status) {
       case 'pending':
-        return 'warning';
+        return activeTheme.warning;
       case 'reviewed':
-        return 'info';
+        return activeTheme.info;
       case 'resolved':
-        return 'success';
+        return activeTheme.success;
       case 'closed':
-        return 'default';
+        return activeTheme.textSecondary;
       default:
-        return 'default';
+        return activeTheme.textSecondary;
     }
-  };
-
-  const getStatusColorValue = () => {
-    const statusColor = getStatusColor();
-    if (statusColor === 'success') return activeTheme.success;
-    if (statusColor === 'warning') return activeTheme.warning;
-    if (statusColor === 'info') return activeTheme.info;
-    return activeTheme.textSecondary;
   };
 
   const formatDate = (dateString: string): string => {
@@ -171,7 +163,6 @@ export default function FeedbackCard({ feedback, onRespond, onAssign }: Feedback
                 primary
                 startIcon={<Reply />}
                 onClick={() => onRespond(feedback)}
-                disabled={feedback.status === 'closed'}
               >
                 {feedback.response ? 'Update Response' : 'Respond'}
               </ActionButton>

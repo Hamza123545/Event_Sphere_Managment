@@ -1,0 +1,69 @@
+openapi: 3.0.0
+info:
+  title: EventSphere Expo Management API
+  version: 1.0.0
+  description: Expo events, floor plans, schedules, exhibitor approvals, and analytics
+servers:
+  - url: /api/v1
+    description: API Base URL
+paths:
+  /expos:
+    get:
+      summary: List all expos
+      tags: [Expos]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of expos
+    post:
+      summary: Create a new expo
+      tags: [Expos]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Expo created successfully
+  /expos/{id}:
+    get:
+      summary: Get expo by ID
+      tags: [Expos]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expo details
+        '404':
+          description: Expo not found
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+

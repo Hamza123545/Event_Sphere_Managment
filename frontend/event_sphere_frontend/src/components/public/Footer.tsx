@@ -13,12 +13,7 @@ import {
   Phone,
   LocationOn,
 } from '@mui/icons-material';
-import { getActiveTheme } from '../../theme/designSystem';
-import { useThemeStore } from '../../stores/themeStore';
-
 export default function Footer() {
-  const { mode } = useThemeStore();
-  const theme = getActiveTheme(mode);
   const navigate = useNavigate();
 
   const handleLinkClick = (path: string, e: React.MouseEvent) => {
@@ -38,7 +33,7 @@ export default function Footer() {
   const footerLinks = {
     company: [
       { label: 'About Us', path: '/about' },
-      { label: 'Services', path: '#services' },
+      { label: 'Services', path: '/services' },
       { label: 'Contact', path: '/contact' },
     ],
     legal: [
@@ -57,8 +52,8 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        background: `linear-gradient(180deg, ${theme.surface} 0%, ${theme.bg} 100%)`,
-        borderTop: `1px solid ${theme.border}`,
+        background: '#080808',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
         pt: 8,
         pb: 4,
         mt: 12,
@@ -71,20 +66,21 @@ export default function Footer() {
             <Typography
               variant="h5"
               sx={{
-                fontWeight: 800,
-                background: `linear-gradient(135deg, ${theme.accent} 0%, #a78bfa 100%)`,
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 mb: 2,
+                fontSize: '1.5rem',
               }}
             >
-              EventSphere
+              EVENTSPHERE
             </Typography>
             <Typography
               variant="body2"
               sx={{
-                color: theme.textSecondary,
+                color: 'rgba(255, 255, 255, 0.6)',
                 mb: 3,
                 lineHeight: 1.8,
               }}
@@ -95,11 +91,11 @@ export default function Footer() {
             <Box sx={{ display: 'flex', gap: 2 }}>
               <IconButton
                 sx={{
-                  color: theme.textSecondary,
-                  border: `1px solid ${theme.border}`,
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   '&:hover': {
-                    color: theme.accent,
-                    borderColor: theme.accent,
+                    color: '#7c3aed',
+                    borderColor: '#7c3aed',
                   },
                 }}
               >
@@ -107,11 +103,11 @@ export default function Footer() {
               </IconButton>
               <IconButton
                 sx={{
-                  color: theme.textSecondary,
-                  border: `1px solid ${theme.border}`,
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   '&:hover': {
-                    color: theme.accent,
-                    borderColor: theme.accent,
+                    color: '#7c3aed',
+                    borderColor: '#7c3aed',
                   },
                 }}
               >
@@ -119,11 +115,11 @@ export default function Footer() {
               </IconButton>
               <IconButton
                 sx={{
-                  color: theme.textSecondary,
-                  border: `1px solid ${theme.border}`,
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   '&:hover': {
-                    color: theme.accent,
-                    borderColor: theme.accent,
+                    color: '#7c3aed',
+                    borderColor: '#7c3aed',
                   },
                 }}
               >
@@ -139,7 +135,7 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 mb: 2,
-                color: theme.textPrimary,
+                color: 'white',
               }}
             >
               Company
@@ -153,12 +149,12 @@ export default function Footer() {
                   href={link.path.startsWith('#') ? link.path : undefined}
                   onClick={link.path.startsWith('#') ? (e) => handleLinkClick(link.path, e) : undefined}
                   sx={{
-                    color: theme.textSecondary,
+                    color: 'rgba(255, 255, 255, 0.6)',
                     textDecoration: 'none',
                     fontSize: '0.9rem',
                     cursor: 'pointer',
                     '&:hover': {
-                      color: theme.accent,
+                      color: '#7c3aed',
                     },
                   }}
                 >
@@ -175,7 +171,7 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 mb: 2,
-                color: theme.textPrimary,
+                color: 'white',
               }}
             >
               Legal
@@ -187,11 +183,11 @@ export default function Footer() {
                   component={RouterLink}
                   to={link.path}
                   sx={{
-                    color: theme.textSecondary,
+                    color: 'rgba(255, 255, 255, 0.6)',
                     textDecoration: 'none',
                     fontSize: '0.9rem',
                     '&:hover': {
-                      color: theme.accent,
+                      color: '#7c3aed',
                     },
                   }}
                 >
@@ -208,7 +204,7 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 mb: 2,
-                color: theme.textPrimary,
+                color: 'white',
               }}
             >
               Support
@@ -220,11 +216,11 @@ export default function Footer() {
                   component={RouterLink}
                   to={link.path}
                   sx={{
-                    color: theme.textSecondary,
+                    color: 'rgba(255, 255, 255, 0.6)',
                     textDecoration: 'none',
                     fontSize: '0.9rem',
                     '&:hover': {
-                      color: theme.accent,
+                      color: '#7c3aed',
                     },
                   }}
                 >
@@ -241,35 +237,35 @@ export default function Footer() {
               sx={{
                 fontWeight: 700,
                 mb: 2,
-                color: theme.textPrimary,
+                color: 'white',
               }}
             >
               Contact
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Email sx={{ fontSize: '1.2rem', color: theme.accent }} />
+                <Email sx={{ fontSize: '1.2rem', color: '#7c3aed' }} />
                 <Typography
                   variant="body2"
-                  sx={{ color: theme.textSecondary }}
+                  sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
                 >
                   info@eventsphere.com
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Phone sx={{ fontSize: '1.2rem', color: theme.accent }} />
+                <Phone sx={{ fontSize: '1.2rem', color: '#7c3aed' }} />
                 <Typography
                   variant="body2"
-                  sx={{ color: theme.textSecondary }}
+                  sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
                 >
                   +1 (555) 123-4567
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                <LocationOn sx={{ fontSize: '1.2rem', color: theme.accent, mt: 0.5 }} />
+                <LocationOn sx={{ fontSize: '1.2rem', color: '#7c3aed', mt: 0.5 }} />
                 <Typography
                   variant="body2"
-                  sx={{ color: theme.textSecondary }}
+                  sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
                 >
                   123 Event Street, City, State 12345
                 </Typography>
@@ -283,14 +279,14 @@ export default function Footer() {
           sx={{
             mt: 6,
             pt: 4,
-            borderTop: `1px solid ${theme.border}`,
+            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
             textAlign: 'center',
           }}
         >
           <Typography
             variant="body2"
             sx={{
-              color: theme.textSecondary,
+              color: 'rgba(255, 255, 255, 0.6)',
             }}
           >
             © {new Date().getFullYear()} EventSphere. All rights reserved.

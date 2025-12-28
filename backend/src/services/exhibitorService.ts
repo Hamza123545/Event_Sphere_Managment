@@ -4,13 +4,13 @@
  * Per contracts/exhibitor-api.yaml: FR-017, FR-018, FR-019
  */
 
-import { ExhibitorProfile, IExhibitorProfile } from '../models/ExhibitorProfile';
+import { ExhibitorProfile } from '../models/ExhibitorProfile';
 import { ExpoEvent } from '../models/ExpoEvent';
 import { User } from '../models/User';
 import { FloorPlan } from '../models/FloorPlan';
 import { CustomError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
-import { saveFileInfo, UploadedFileInfo } from './uploadService';
+import { saveFileInfo } from './uploadService';
 
 export interface RegisterForExpoInput {
   companyName: string;

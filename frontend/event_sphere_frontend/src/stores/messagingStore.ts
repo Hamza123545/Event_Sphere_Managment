@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import * as messagingApi from '../services/messagingApi';
 import { getSocket, onSocketEvent, offSocketEvent, joinUserRoom, } from '../services/socket';
+import type { Socket } from 'socket.io-client';
 import type { Message, SendMessageRequest, NewMessageEvent } from '../types/messaging';
 import { useAuthStore } from './authStore';
 
@@ -59,13 +60,16 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
       
       set({
         messages,
-        inboxMessages: messages.filter((msg) => !options?.type || options.type === 'inbox'),
-        sentMessages: messages.filter((msg) => options?.type === 'sent'),
+        inboxMessages: !options?.type || options.type === 'inbox' ? messages : [],
+        sentMessages: options?.type === 'sent' ? messages : [],
         isLoading: false,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load messages'
+        : 'Failed to load messages';
       set({
-        error: error.response?.data?.message || 'Failed to load messages',
+        error: errorMessage,
         isLoading: false,
       });
     }
@@ -81,8 +85,10 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         sentMessages: [newMessage, ...state.sentMessages],
         isLoading: false,
       }));
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to send message';
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to send message'
+        : 'Failed to send message';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
@@ -100,14 +106,16 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         const unreadCount = updatedMessages.filter((msg) => !msg.isRead).length;
         return {
           messages: updatedMessages,
-          inboxMessages: updatedMessages.filter((msg) => !msg.isRead || msg.isRead),
+          inboxMessages: updatedMessages,
           selectedMessage: state.selectedMessage?.messageId === messageId ? updatedMessage : state.selectedMessage,
           unreadCount,
           isLoading: false,
         };
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to mark message as read';
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to mark message as read'
+        : 'Failed to mark message as read';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
@@ -118,7 +126,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     try {
       const count = await messagingApi.getUnreadCount(role);
       set({ unreadCount: count });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Don't set error, just log
       console.error('Failed to get unread count:', error);
     }
@@ -175,8 +183,11 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     // Subscribe to events
     const socket = getSocket();
     if (socket) {
-      onSocketEvent('new-message', handleNewMessage);
-      (socket as any)._newMessageHandler = handleNewMessage;
+      onSocketEvent('new-message', (data: unknown) => {
+        handleNewMessage(data as NewMessageEvent);
+      });
+      // Store handler for cleanup
+      (socket as Socket & { _newMessageHandler?: typeof handleNewMessage })._newMessageHandler = handleNewMessage;
     }
   },
 
@@ -184,10 +195,13 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
   unsubscribeFromMessageUpdates: () => {
     const socket = getSocket();
     if (socket) {
-      const handler = (socket as any)._newMessageHandler;
+      const socketWithHandler = socket as Socket & { _newMessageHandler?: (event: NewMessageEvent) => Promise<void> };
+      const handler = socketWithHandler._newMessageHandler;
       if (handler) {
-        offSocketEvent('new-message', handler);
-        delete (socket as any)._newMessageHandler;
+        offSocketEvent('new-message', (data: unknown) => {
+          handler(data as NewMessageEvent);
+        });
+        delete socketWithHandler._newMessageHandler;
       }
     }
   },

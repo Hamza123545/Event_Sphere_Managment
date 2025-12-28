@@ -5,6 +5,9 @@
 
 import type { ExpoSummary } from './expo';
 
+// Re-export ExpoSummary for convenience
+export type { ExpoSummary };
+
 export interface ExhibitorProfile {
   profileId: string;
   expoId: string;

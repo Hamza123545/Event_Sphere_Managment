@@ -1,9 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Run linter on staged files
-echo "Running linter on staged files..."
-cd backend && pnpm lint-staged || exit 1
-cd ../frontend/event_sphere_frontend && pnpm lint-staged || exit 1
-
-

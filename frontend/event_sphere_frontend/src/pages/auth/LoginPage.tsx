@@ -14,7 +14,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { AutoAwesome } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { useAuthStore } from '../../stores/authStore';
 import { login as loginApi } from '../../services/authApi';
 import { connectSocket } from '../../services/socket';

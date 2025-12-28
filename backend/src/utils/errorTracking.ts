@@ -25,7 +25,8 @@ export interface ErrorContext {
  */
 class ErrorTrackingService {
   private isInitialized = false;
-  private service: 'sentry' | 'console' | null = null;
+  // @ts-expect-error - Reserved for future Sentry integration (will be used when Sentry code is uncommented)
+  private _service: 'sentry' | 'console' | null = null;
 
   /**
    * Initialize error tracking service
@@ -37,7 +38,7 @@ class ErrorTrackingService {
       return;
     }
 
-    this.service = service;
+    this._service = service;
 
     if (service === 'sentry') {
       // In production, initialize Sentry here

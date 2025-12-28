@@ -5,17 +5,15 @@
  */
 
 import { Router, type Router as ExpressRouter, Request, Response, NextFunction } from 'express';
-import { body, param, query } from 'express-validator';
+import { body, query } from 'express-validator';
 import * as exhibitorService from '../services/exhibitorService';
 import * as boothService from '../services/boothService';
-import * as expoService from '../services/expoService';
 import * as messagingService from '../services/messagingService';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import {
   validate,
   validateObjectId,
-  validateString,
   validateMessageContent,
   validateMessageSubject,
   validateMessageContext,
@@ -351,11 +349,12 @@ router.get(
     const profile = await exhibitorService.getProfile(profileId, userId);
 
     if (!profile.booth) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'No booth assigned to this profile',
         errorCode: 'NO_BOOTH_ASSIGNED',
       });
+      return;
     }
 
     res.json({

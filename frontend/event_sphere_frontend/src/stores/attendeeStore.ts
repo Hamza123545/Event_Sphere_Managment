@@ -244,7 +244,8 @@ export const useAttendeeStore = create<AttendeeState>()(
       // Subscribe to real-time schedule updates
       subscribeToScheduleUpdates: (expoId) => {
         subscribeExpo(expoId, {
-          onScheduleChanged: (event: ScheduleChangedEvent) => {
+          onScheduleChanged: (eventData: { expoId: string; session: unknown; schedule?: unknown; location?: unknown; changeType?: string }) => {
+            const event = eventData as unknown as ScheduleChangedEvent;
             // Update session in list if it exists
             const sessions = get().sessions.map((s) => {
               if (s.sessionId === event.session.sessionId) {
@@ -272,7 +273,8 @@ export const useAttendeeStore = create<AttendeeState>()(
               get().getPersonalSchedule();
             }
           },
-          onSessionDeleted: (event: SessionDeletedEvent) => {
+          onSessionDeleted: (eventData: { expoId: string; sessionId: string }) => {
+            const event = eventData as unknown as SessionDeletedEvent;
             // Remove session from list
             const sessions = get().sessions.filter((s) => s.sessionId !== event.sessionId);
             set({ sessions });

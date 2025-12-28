@@ -24,7 +24,7 @@ interface ApprovalState {
   clearError: () => void;
 }
 
-export const useApprovalStore = create<ApprovalState>((set, get) => ({
+export const useApprovalStore = create<ApprovalState>((set) => ({
   // Initial state
   applications: [],
   pendingApplications: [],

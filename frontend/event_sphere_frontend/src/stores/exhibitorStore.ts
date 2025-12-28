@@ -18,7 +18,7 @@ import type {
 } from '../types/exhibitor';
 import type { ExhibitorApprovedEvent, ExhibitorRejectedEvent } from '../types/approval';
 import * as exhibitorApi from '../services/exhibitorApi';
-import { joinExpoRoom, leaveExpoRoom, getSocket, onSocketEvent, offSocketEvent, joinExhibitorRoom, leaveExhibitorRoom } from '../services/socket';
+import { joinExpoRoom, leaveExpoRoom, getSocket, onSocketEvent, offSocketEvent, joinExhibitorRoom } from '../services/socket';
 
 interface ExhibitorState {
   // State
@@ -51,7 +51,7 @@ interface ExhibitorState {
   clearApprovalNotification: () => void;
 }
 
-export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
+export const useExhibitorStore = create<ExhibitorState>((set) => ({
   // Initial state
   profiles: [],
   selectedProfile: null,
@@ -260,16 +260,17 @@ export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
     joinExpoRoom(expoId);
 
     // Handle booth-allocated event
-    const handleBoothAllocated = (data: BoothAllocatedEvent) => {
-      if (data.expoId === expoId) {
+      const handleBoothAllocated = (data: unknown) => {
+      const event = data as BoothAllocatedEvent;
+      if (event.expoId === expoId) {
         set((state) => {
           if (!state.floorPlan || state.floorPlan.expoId !== expoId) {
             return {};
           }
 
           const updatedBooths = state.floorPlan.booths.map((b) =>
-            b.boothId === data.boothId
-              ? { ...b, status: 'reserved' as const, exhibitor: { profileId: data.profileId, companyName: '' } }
+            b.boothId === event.boothId
+              ? { ...b, status: 'reserved' as const, exhibitor: { profileId: event.profileId, companyName: '' } }
               : b
           );
 
@@ -288,15 +289,16 @@ export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
     };
 
     // Handle booth-released event
-    const handleBoothReleased = (data: BoothReleasedEvent) => {
-      if (data.expoId === expoId) {
+    const handleBoothReleased = (data: unknown) => {
+      const event = data as BoothReleasedEvent;
+      if (event.expoId === expoId) {
         set((state) => {
           if (!state.floorPlan || state.floorPlan.expoId !== expoId) {
             return {};
           }
 
           const updatedBooths = state.floorPlan.booths.map((b) =>
-            b.boothId === data.boothId
+            b.boothId === event.boothId
               ? { ...b, status: 'available' as const, exhibitor: undefined }
               : b
           );
@@ -355,19 +357,20 @@ export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
     joinExhibitorRoom(userId);
 
     // Handle exhibitor-approved event
-    const handleApproved = (data: ExhibitorApprovedEvent) => {
+    const handleApproved = (data: unknown) => {
+      const event = data as ExhibitorApprovedEvent;
       set((state) => {
         // Update profile status if it exists in the store
         const updatedProfiles = state.profiles.map((profile) =>
-          profile.profileId === data.profileId || profile.profileId === data.exhibitorProfileId
+          profile.profileId === event.profileId || profile.profileId === event.exhibitorProfileId
             ? { ...profile, registrationStatus: 'approved' as const }
             : profile
         );
 
         // Update selected profile if it matches
         const updatedSelectedProfile =
-          state.selectedProfile?.profileId === data.profileId ||
-          state.selectedProfile?.profileId === data.exhibitorProfileId
+          state.selectedProfile?.profileId === event.profileId ||
+          state.selectedProfile?.profileId === event.exhibitorProfileId
             ? { ...state.selectedProfile, registrationStatus: 'approved' as const }
             : state.selectedProfile;
 
@@ -377,35 +380,36 @@ export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
           selectedProfile: updatedSelectedProfile,
           approvalNotification: {
             type: 'approved',
-            message: `Your application for ${data.expoTitle} has been approved!`,
-            expoTitle: data.expoTitle,
+            message: `Your application for ${event.expoTitle} has been approved!`,
+            expoTitle: event.expoTitle,
           },
         };
       });
     };
 
     // Handle exhibitor-rejected event
-    const handleRejected = (data: ExhibitorRejectedEvent) => {
+    const handleRejected = (data: unknown) => {
+      const event = data as ExhibitorRejectedEvent;
       set((state) => {
         // Update profile status if it exists in the store
         const updatedProfiles = state.profiles.map((profile) =>
-          profile.profileId === data.profileId || profile.profileId === data.exhibitorProfileId
+          profile.profileId === event.profileId || profile.profileId === event.exhibitorProfileId
             ? {
                 ...profile,
                 registrationStatus: 'rejected' as const,
-                rejectionReason: data.reason,
+                rejectionReason: event.reason,
               }
             : profile
         );
 
         // Update selected profile if it matches
         const updatedSelectedProfile =
-          state.selectedProfile?.profileId === data.profileId ||
-          state.selectedProfile?.profileId === data.exhibitorProfileId
+          state.selectedProfile?.profileId === event.profileId ||
+          state.selectedProfile?.profileId === event.exhibitorProfileId
             ? {
                 ...state.selectedProfile,
                 registrationStatus: 'rejected' as const,
-                rejectionReason: data.reason,
+                rejectionReason: event.reason,
               }
             : state.selectedProfile;
 
@@ -415,9 +419,9 @@ export const useExhibitorStore = create<ExhibitorState>((set, get) => ({
           selectedProfile: updatedSelectedProfile,
           approvalNotification: {
             type: 'rejected',
-            message: `Your application for ${data.expoTitle} has been rejected.`,
-            expoTitle: data.expoTitle,
-            reason: data.reason,
+            message: `Your application for ${event.expoTitle} has been rejected.`,
+            expoTitle: event.expoTitle,
+            reason: event.reason,
           },
         };
       });
