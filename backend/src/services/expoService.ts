@@ -88,6 +88,40 @@ export interface ExpoSummary {
 }
 
 /**
+ * Fix image URL - replace localhost with production URL if needed
+ * This ensures old images with localhost URLs work in production
+ */
+function fixImageUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  
+  // Replace localhost URLs with production URL
+  if (url.includes('localhost:5000') || url.includes('localhost:7860')) {
+    const productionUrl = process.env.BASE_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://hamza057-eventsphere-backend.hf.space'
+        : 'http://localhost:5000');
+    
+    // Extract the path from the old URL
+    try {
+      const urlObj = new URL(url);
+      const path = urlObj.pathname;
+      
+      // Construct new URL with production base
+      const fixedUrl = `${productionUrl}${path}`;
+      logger.debug('Fixed image URL', { original: url, fixed: fixedUrl });
+      return fixedUrl;
+    } catch (error) {
+      // If URL parsing fails, try simple string replacement
+      const fixedUrl = url.replace(/http:\/\/localhost:\d+/, productionUrl);
+      logger.debug('Fixed image URL (fallback)', { original: url, fixed: fixedUrl });
+      return fixedUrl;
+    }
+  }
+  
+  return url;
+}
+
+/**
  * Create a new expo event
  * Implements FR-008
  */
@@ -207,7 +241,12 @@ export async function listOrganizerExpos(
       const cacheKey = CacheKeys.expoList(userId);
       const cached = await cacheService.get<{ expos: ExpoSummary[]; pagination: any }>(cacheKey);
       if (cached) {
-        logger.debug('Returning cached expo list', { userId, cacheKey });
+        // Fix image URLs in cached data as well
+        cached.expos = cached.expos.map(expo => ({
+          ...expo,
+          imageUrl: fixImageUrl(expo.imageUrl),
+        }));
+        logger.debug('Returning cached expo list (with fixed URLs)', { userId, cacheKey });
         return cached;
       }
     }
@@ -240,7 +279,7 @@ export async function listOrganizerExpos(
         city: expo.location.city,
         country: expo.location.country,
       },
-      imageUrl: expo.imageUrl,
+      imageUrl: fixImageUrl(expo.imageUrl),
     }));
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -500,7 +539,7 @@ function formatExpoDetail(expo: IExpoEvent & { organizer?: any }): ExpoDetail {
       name: organizerName,
     },
     status: expo.status,
-    imageUrl: expo.imageUrl,
+    imageUrl: fixImageUrl(expo.imageUrl),
     createdAt: expo.createdAt,
     updatedAt: expo.updatedAt,
   };
