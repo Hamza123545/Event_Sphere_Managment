@@ -144,6 +144,7 @@ export default function AttendeeDashboard() {
       }, 50);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [browseExpos, getPersonalSchedule, user]);
 
   // Calculate stats from real data

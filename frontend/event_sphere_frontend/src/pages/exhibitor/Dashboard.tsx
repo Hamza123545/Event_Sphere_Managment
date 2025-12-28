@@ -55,6 +55,7 @@ export default function Dashboard() {
       }, 50);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [getProfiles, user]);
 
   // Subscribe to approval updates (T158, T160)
