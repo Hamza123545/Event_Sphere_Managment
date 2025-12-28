@@ -47,8 +47,11 @@ export default function Dashboard() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
-    getProfiles();
-  }, [getProfiles]);
+    // Only fetch profiles if user is authenticated
+    if (user && user.userId) {
+      getProfiles();
+    }
+  }, [getProfiles, user]);
 
   // Subscribe to approval updates (T158, T160)
   useEffect(() => {

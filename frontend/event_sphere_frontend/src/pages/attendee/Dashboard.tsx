@@ -135,9 +135,12 @@ export default function AttendeeDashboard() {
 
   // Load data on mount
   useEffect(() => {
-    browseExpos({ status: 'upcoming' });
-    getPersonalSchedule();
-  }, [browseExpos, getPersonalSchedule]);
+    // Only fetch data if user is authenticated
+    if (user && user.userId) {
+      browseExpos({ status: 'upcoming' });
+      getPersonalSchedule();
+    }
+  }, [browseExpos, getPersonalSchedule, user]);
 
   // Calculate stats from real data
   const stats = useMemo(() => {

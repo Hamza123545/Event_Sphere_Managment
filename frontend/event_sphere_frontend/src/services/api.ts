@@ -45,9 +45,32 @@ apiClient.interceptors.response.use(
   (error: AxiosError) => {
     // Handle 401 Unauthorized - clear token and redirect to login
     if (error.response?.status === 401) {
+      // Clear auth data
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Clear auth store state (non-blocking)
+      import('../stores/authStore').then(({ useAuthStore }) => {
+        useAuthStore.getState().logout();
+      }).catch(() => {
+        // Store might not be available, that's okay
+      });
+      
+      // Only redirect if not already on login/register page
+      // Use a simple check to avoid redirect loops and conflicts with React Router
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath === '/login' || 
+                         currentPath === '/register' || 
+                         currentPath.startsWith('/login') || 
+                         currentPath.startsWith('/register') ||
+                         currentPath === '/forgot-password' ||
+                         currentPath.startsWith('/reset-password');
+      
+      if (!isAuthPage) {
+        // Use window.location.href for reliable redirect
+        // This works correctly with React Router on Vercel
+        window.location.href = '/login';
+      }
     }
 
     // Handle 403 Forbidden

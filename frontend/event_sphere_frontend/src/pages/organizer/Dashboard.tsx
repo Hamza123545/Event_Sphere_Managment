@@ -18,6 +18,7 @@ import {
 import { Add } from '@mui/icons-material';
 import { AnimatePresence } from 'framer-motion';
 import { useExpoStore } from '../../stores/expoStore';
+import { useAuthStore } from '../../stores/authStore';
 import ModernNavbar from '../../components/common/ModernNavbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorAlert from '../../components/common/ErrorAlert';
@@ -39,6 +40,7 @@ type ExpoStatus = 'draft' | 'upcoming' | 'active' | 'completed' | 'cancelled' | 
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const {
     expos,
     selectedExpo,
@@ -65,6 +67,11 @@ export default function Dashboard() {
 
   // Load expos on mount and when filters change
   useEffect(() => {
+    // Only fetch expos if user is authenticated
+    if (!user || !user.userId) {
+      return;
+    }
+
     const loadExpos = async () => {
       await listExpos({
         status: statusFilter === 'all' ? undefined : statusFilter,
@@ -74,7 +81,7 @@ export default function Dashboard() {
     };
 
     loadExpos();
-  }, [statusFilter, currentPage, listExpos]);
+  }, [statusFilter, currentPage, listExpos, user]);
 
   // Subscribe to real-time updates for all loaded expos
   useEffect(() => {
