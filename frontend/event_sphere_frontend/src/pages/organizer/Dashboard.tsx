@@ -233,7 +233,7 @@ export default function Dashboard() {
           My Expo Events
         </SectionTitle>
 
-        {error && (
+        {error && error !== 'Failed to load expos' && (
           <Box sx={{ mb: 4 }}>
             <ErrorAlert
               message={error}

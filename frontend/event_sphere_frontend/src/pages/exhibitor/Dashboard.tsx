@@ -102,7 +102,7 @@ export default function Dashboard() {
           My Exhibitor Profiles
         </SectionTitle>
 
-        {error && (
+        {error && error !== 'Failed to load profiles' && (
           <Box sx={{ mb: 4 }}>
             <ErrorAlert message={error} onClose={clearError} severity="error" />
           </Box>

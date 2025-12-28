@@ -98,12 +98,28 @@ export const useExhibitorStore = create<ExhibitorState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const profiles = await exhibitorApi.getProfiles();
-      set({ profiles, isLoading: false });
+      set({ profiles: profiles || [], isLoading: false, error: null });
     } catch (error: any) {
-      set({
-        error: error.response?.data?.message || 'Failed to load profiles',
-        isLoading: false,
-      });
+      // Handle 404 gracefully - new users may not have profiles yet
+      // Also handle cases where API returns empty array or null
+      if (error.response?.status === 404 || error.response?.status === 200) {
+        set({ profiles: [], isLoading: false, error: null });
+      } else if (error.response?.status === 401) {
+        // Don't set error for 401 - let the API interceptor handle it
+        set({ isLoading: false });
+        throw error;
+      } else {
+        // Only set error for unexpected errors, not for "no data" scenarios
+        const errorMessage = error.response?.data?.message || 'Failed to load profiles';
+        if (!errorMessage.includes('not found') && !errorMessage.includes('NOT_FOUND')) {
+          set({
+            error: errorMessage,
+            isLoading: false,
+          });
+        } else {
+          set({ profiles: [], isLoading: false, error: null });
+        }
+      }
     }
   },
 

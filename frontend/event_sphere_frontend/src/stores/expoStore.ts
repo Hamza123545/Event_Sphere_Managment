@@ -54,15 +54,20 @@ export const useExpoStore = create<ExpoState>((set) => ({
     try {
       const response = await expoApi.listExpos(options);
       set({
-        expos: response.expos,
+        expos: response.expos || [],
         pagination: response.pagination,
         isLoading: false,
       });
     } catch (error: any) {
-      set({
-        error: error.response?.data?.message || 'Failed to load expos',
-        isLoading: false,
-      });
+      // Handle 404 gracefully - new organizers may not have expos yet
+      if (error.response?.status === 404) {
+        set({ expos: [], pagination: null, isLoading: false, error: null });
+      } else {
+        set({
+          error: error.response?.data?.message || 'Failed to load expos',
+          isLoading: false,
+        });
+      }
     }
   },
 

@@ -34,10 +34,15 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
       const analytics = await analyticsApi.getAnalytics(expoId, metricType);
       set({ analytics, isLoading: false });
     } catch (error: any) {
-      set({
-        error: error.response?.data?.message || 'Failed to load analytics',
-        isLoading: false,
-      });
+      // Handle 404 gracefully - analytics may not be available yet
+      if (error.response?.status === 404) {
+        set({ analytics: null, isLoading: false, error: null });
+      } else {
+        set({
+          error: error.response?.data?.message || 'Failed to load analytics',
+          isLoading: false,
+        });
+      }
     }
   },
 

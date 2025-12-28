@@ -82,10 +82,15 @@ export const useAttendeeStore = create<AttendeeState>()(
           const response = await attendeeApi.browseExpos(params);
           set({ expos: Array.isArray(response.expos) ? response.expos : [], isLoading: false });
         } catch (error: any) {
-          set({
-            error: error.response?.data?.message || error.message || 'Failed to browse expos',
-            isLoading: false,
-          });
+          // Handle 404 gracefully - no expos available yet
+          if (error.response?.status === 404) {
+            set({ expos: [], isLoading: false, error: null });
+          } else {
+            set({
+              error: error.response?.data?.message || error.message || 'Failed to browse expos',
+              isLoading: false,
+            });
+          }
         }
       },
 
@@ -182,12 +187,17 @@ export const useAttendeeStore = create<AttendeeState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await attendeeApi.getPersonalSchedule();
-          set({ personalSchedule: response.schedule, isLoading: false });
+          set({ personalSchedule: response.schedule || [], isLoading: false });
         } catch (error: any) {
-          set({
-            error: error.response?.data?.message || error.message || 'Failed to get personal schedule',
-            isLoading: false,
-          });
+          // Handle 404 gracefully - new attendees may not have schedule yet
+          if (error.response?.status === 404) {
+            set({ personalSchedule: [], isLoading: false, error: null });
+          } else {
+            set({
+              error: error.response?.data?.message || error.message || 'Failed to get personal schedule',
+              isLoading: false,
+            });
+          }
         }
       },
 

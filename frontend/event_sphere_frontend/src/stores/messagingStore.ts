@@ -59,19 +59,31 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         role === 'attendee' ? await messagingApi.getAttendeeMessages(options) : await messagingApi.getMessages(options);
       
       set({
-        messages,
-        inboxMessages: !options?.type || options.type === 'inbox' ? messages : [],
-        sentMessages: options?.type === 'sent' ? messages : [],
+        messages: messages || [],
+        inboxMessages: !options?.type || options.type === 'inbox' ? (messages || []) : [],
+        sentMessages: options?.type === 'sent' ? (messages || []) : [],
         isLoading: false,
       });
     } catch (error: unknown) {
-      const errorMessage = error && typeof error === 'object' && 'response' in error 
-        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load messages'
-        : 'Failed to load messages';
-      set({
-        error: errorMessage,
-        isLoading: false,
-      });
+      // Handle 404 gracefully - user may not have messages yet
+      const errorObj = error as { response?: { status?: number; data?: { message?: string; errorCode?: string } } };
+      if (errorObj.response?.status === 404) {
+        set({
+          messages: [],
+          inboxMessages: [],
+          sentMessages: [],
+          isLoading: false,
+          error: null,
+        });
+      } else {
+        const errorMessage = error && typeof error === 'object' && 'response' in error 
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load messages'
+          : 'Failed to load messages';
+        set({
+          error: errorMessage,
+          isLoading: false,
+        });
+      }
     }
   },
 

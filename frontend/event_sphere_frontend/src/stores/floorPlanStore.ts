@@ -63,10 +63,15 @@ export const useFloorPlanStore = create<FloorPlanState>((set, get) => ({
       // Subscribe to real-time updates
       get().subscribeToBoothUpdates(expoId);
     } catch (error: any) {
-      set({
-        error: error.response?.data?.message || error.message || 'Failed to get floor plan',
-        isLoading: false,
-      });
+      // Handle 404 gracefully - floor plan may not exist yet
+      if (error.response?.status === 404 || error.response?.data?.errorCode === 'FLOOR_PLAN_NOT_FOUND') {
+        set({ floorPlan: null, isLoading: false, error: null });
+      } else {
+        set({
+          error: error.response?.data?.message || error.message || 'Failed to get floor plan',
+          isLoading: false,
+        });
+      }
     }
   },
 

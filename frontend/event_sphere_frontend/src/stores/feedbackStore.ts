@@ -60,9 +60,15 @@ export const useFeedbackStore = create<FeedbackState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const feedback = await feedbackApi.getFeedback();
-      set({ myFeedback: feedback, isLoading: false });
+      set({ myFeedback: feedback || [], isLoading: false });
     } catch (error) {
-      set({ error: parseApiError(error), isLoading: false });
+      // Handle 404 gracefully - user may not have submitted feedback yet
+      const errorObj = error as { response?: { status?: number; data?: { errorCode?: string } } };
+      if (errorObj.response?.status === 404) {
+        set({ myFeedback: [], isLoading: false, error: null });
+      } else {
+        set({ error: parseApiError(error), isLoading: false });
+      }
     }
   },
 
@@ -70,9 +76,15 @@ export const useFeedbackStore = create<FeedbackState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const queue = await feedbackApi.getFeedback(filters);
-      set({ feedbackQueue: queue, isLoading: false });
+      set({ feedbackQueue: queue || [], isLoading: false });
     } catch (error) {
-      set({ error: parseApiError(error), isLoading: false });
+      // Handle 404 gracefully - no feedback in queue yet
+      const errorObj = error as { response?: { status?: number; data?: { errorCode?: string } } };
+      if (errorObj.response?.status === 404) {
+        set({ feedbackQueue: [], isLoading: false, error: null });
+      } else {
+        set({ error: parseApiError(error), isLoading: false });
+      }
     }
   },
 
