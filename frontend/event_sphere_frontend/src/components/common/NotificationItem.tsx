@@ -19,8 +19,16 @@ import {
   activeTheme,
 } from '../../theme/designSystem';
 // Helper to format time ago
-const formatTimeAgo = (date: Date): string => {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+const formatTimeAgo = (date: Date | string): string => {
+  // Convert to Date if it's a string
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'recently';
+  }
+  
+  const seconds = Math.floor((new Date().getTime() - dateObj.getTime()) / 1000);
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;

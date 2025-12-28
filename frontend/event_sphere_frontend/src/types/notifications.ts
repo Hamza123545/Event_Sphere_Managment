@@ -84,7 +84,7 @@ export interface NotificationItem {
   id: string;
   notification: Notification;
   read: boolean;
-  createdAt: Date;
+  createdAt: Date | string; // Can be Date or string (after persistence rehydration)
 }
 
 export interface NotificationPreferences {
