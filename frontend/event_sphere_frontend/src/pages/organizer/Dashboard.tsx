@@ -102,14 +102,18 @@ export default function Dashboard() {
   }, [expos, subscribeToExpoUpdates, unsubscribeFromExpoUpdates]);
 
   const handleCreateExpo = async (data: CreateExpoRequest) => {
-    await createExpo(data);
+    const newExpo = await createExpo(data);
     setCreateDialogOpen(false);
-    // Refresh list
+    // Refresh list immediately to show new expo
     await listExpos({
       status: statusFilter === 'all' ? undefined : statusFilter,
       page: currentPage,
       limit: 12,
     });
+    // Subscribe to updates for the new expo
+    if (newExpo) {
+      subscribeToExpoUpdates(newExpo.expoId);
+    }
   };
 
   const handleEditExpo = async (expo: ExpoSummary) => {
@@ -122,12 +126,8 @@ export default function Dashboard() {
     await updateExpo(expoId, data);
     setEditDialogOpen(false);
     setSelectedExpo(null);
-    // Refresh list
-    await listExpos({
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      page: currentPage,
-      limit: 12,
-    });
+    // Real-time update should handle this, but refresh to be safe
+    // The WebSocket will update the list automatically
   };
 
   const handleDeleteExpo = async (expo: ExpoSummary) => {

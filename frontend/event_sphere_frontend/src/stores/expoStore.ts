@@ -163,34 +163,41 @@ export const useExpoStore = create<ExpoState>((set) => ({
 
     // Listen for expo-updated event
     const handleExpoUpdated = (data: ExpoUpdatedEvent) => {
-      if (data.expoId === expoId) {
-        set((state) => {
-          // Update selected expo if it matches
-          if (state.selectedExpo?.expoId === expoId) {
-            return {
-              selectedExpo: {
-                ...state.selectedExpo,
-                ...data.expo,
-                expoId: data.expoId,
-              } as ExpoDetail,
-            };
-          }
-          
-          // Update in expos list
+      // Update for any expo (not just the subscribed one) to handle all updates
+      set((state) => {
+        const expoIdToUpdate = data.expoId;
+        
+        // Update selected expo if it matches
+        if (state.selectedExpo?.expoId === expoIdToUpdate) {
+          return {
+            selectedExpo: {
+              ...state.selectedExpo,
+              ...data.expo,
+              expoId: expoIdToUpdate,
+            } as ExpoDetail,
+          };
+        }
+        
+        // Update in expos list
+        const expoExists = state.expos.some(expo => expo.expoId === expoIdToUpdate);
+        if (expoExists) {
           const updatedExpos = state.expos.map((expo) => {
-            if (expo.expoId === expoId) {
+            if (expo.expoId === expoIdToUpdate) {
               return {
                 ...expo,
                 ...data.expo,
-                expoId: data.expoId,
+                expoId: expoIdToUpdate,
               } as ExpoSummary;
             }
             return expo;
           });
 
           return { expos: updatedExpos };
-        });
-      }
+        }
+        
+        // If expo not in list, no update needed
+        return {};
+      });
     };
 
     // Listen for schedule-changed event (T137)
