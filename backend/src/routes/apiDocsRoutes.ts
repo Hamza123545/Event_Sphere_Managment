@@ -120,7 +120,7 @@ router.get('/', (_req: Request, res: Response) => {
     </p>
     <div class="spec-list">
       ${availableSpecs.map((spec, index) => `
-        <div class="spec-card ${index === 0 ? 'active' : ''}" onclick="loadSpec('${spec.file}')">
+        <div class="spec-card ${index === 0 ? 'active' : ''}" data-spec-file="${spec.file}">
           <h3>${spec.name}</h3>
           <p>${spec.description}</p>
         </div>
@@ -133,11 +133,13 @@ router.get('/', (_req: Request, res: Response) => {
   <script>
     let currentSpec = '${availableSpecs[0]?.file || ''}';
     
-    function loadSpec(specFile) {
+    function loadSpec(specFile, clickedCard) {
       currentSpec = specFile;
       // Update active card
       document.querySelectorAll('.spec-card').forEach(card => card.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      if (clickedCard) {
+        clickedCard.classList.add('active');
+      }
       
       // Load spec
       const url = '/api-docs/spec/' + specFile;
@@ -154,6 +156,16 @@ router.get('/', (_req: Request, res: Response) => {
         tryItOutEnabled: true
       });
     }
+    
+    // Add click event listeners to cards
+    document.querySelectorAll('.spec-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const specFile = this.getAttribute('data-spec-file');
+        if (specFile) {
+          loadSpec(specFile, this);
+        }
+      });
+    });
     
     // Load first spec by default
     if (currentSpec) {

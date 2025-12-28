@@ -6,7 +6,7 @@ import { io, Socket } from 'socket.io-client';
  * Connection management, auto-reconnect, event typing
  */
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://hamza057-eventsphere-backend.hf.space';
 
 let socket: Socket | null = null;
 let reconnectAttempts = 0;

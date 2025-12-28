@@ -81,7 +81,7 @@ export async function sendPasswordResetEmail(
     }
 
     const { transporter, from, fromName } = emailConfig;
-    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'https://event-sphere-managment.vercel.app';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
@@ -164,7 +164,7 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<void> 
     }
 
     const { transporter, from, fromName } = emailConfig;
-    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'https://event-sphere-managment.vercel.app';
     const dashboardUrl = `${frontendUrl}/exhibitor`;
 
     const mailOptions = {
@@ -228,7 +228,7 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<void
     }
 
     const { transporter, from, fromName } = emailConfig;
-    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'https://event-sphere-managment.vercel.app';
     const dashboardUrl = `${frontendUrl}/exhibitor`;
 
     const mailOptions = {
@@ -537,7 +537,7 @@ export async function sendExpoUpdateEmail(
     }
 
     const { transporter, from, fromName } = emailConfig;
-    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'https://event-sphere-managment.vercel.app';
     const expoUrl = `${frontendUrl}/attendee/expos`;
 
     const getUpdateMessage = () => {
@@ -729,7 +729,7 @@ export async function sendFeedbackNotificationEmail(
     }
 
     const { transporter, from, fromName } = emailConfig;
-    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.ALLOWED_ORIGINS?.split(',')[0] || 'https://event-sphere-managment.vercel.app';
     const feedbackUrl = `${frontendUrl}/organizer/feedback`;
     const categoryLabel = category
       .split('-')
