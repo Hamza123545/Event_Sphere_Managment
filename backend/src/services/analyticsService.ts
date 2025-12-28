@@ -138,8 +138,11 @@ export async function getExpoAnalytics(
  */
 export async function calculateAttendeeCount(expoId: string): Promise<AttendeeCountMetrics> {
   // MongoDB aggregation pipeline for attendee counts by status (T179)
+  // Convert expoId string to ObjectId for proper matching
+  const { Types } = await import('mongoose');
+  
   const pipeline = [
-    { $match: { expo: expoId } },
+    { $match: { expo: new Types.ObjectId(expoId) } },
     {
       $group: {
         _id: '$attendanceStatus',
@@ -164,6 +167,7 @@ export async function calculateAttendeeCount(expoId: string): Promise<AttendeeCo
     if (item._id === 'no-show') metrics.noShow = item.count;
   });
 
+  logger.debug('Calculated attendee count metrics', { expoId, metrics, results });
   return metrics;
 }
 

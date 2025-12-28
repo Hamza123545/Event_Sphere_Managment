@@ -118,6 +118,9 @@ export const useAttendeeStore = create<AttendeeState>()(
           await attendeeApi.registerForExpo(expoId, { preferences });
           // Refresh expo details to show registration status
           await get().getExpoDetails(expoId);
+          // Refresh personal schedule to show any available sessions
+          await get().getPersonalSchedule();
+          set({ isLoading: false });
         } catch (error: any) {
           set({
             error: error.response?.data?.message || error.message || 'Failed to register for expo',

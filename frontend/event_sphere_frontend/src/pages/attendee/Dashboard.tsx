@@ -192,17 +192,21 @@ export default function AttendeeDashboard() {
 
   // Format expos for display
   const displayExpos = useMemo(() => {
-    return expos.slice(0, 6).map((expoItem) => ({
-      id: expoItem.expoId,
-      title: expoItem.title,
-      status: expoItem.status === 'active' ? 'Live' : expoItem.status === 'upcoming' ? 'Upcoming' : expoItem.status,
-      location: `${expoItem.location.city}, ${expoItem.location.country}`,
-      attendees: 0, // This would need to come from backend analytics
-      image: expoItem.imageUrl || 'https://images.unsplash.com/photo-1540575861501-7ce0e220abb4?auto=format&fit=crop&w=800&q=80', // Use actual imageUrl or fallback placeholder
-      imageUrl: expoItem.imageUrl, // Keep imageUrl for consistency
-      expoId: expoItem.expoId,
-      dateRange: expoItem.dateRange,
-    }));
+    return expos.slice(0, 6).map((expoItem) => {
+      // Ensure imageUrl is preserved and doesn't get lost
+      const imageUrl = expoItem.imageUrl || 'https://images.unsplash.com/photo-1540575861501-7ce0e220abb4?auto=format&fit=crop&w=800&q=80';
+      return {
+        id: expoItem.expoId,
+        title: expoItem.title,
+        status: expoItem.status === 'active' ? 'Live' : expoItem.status === 'upcoming' ? 'Upcoming' : expoItem.status,
+        location: `${expoItem.location.city}, ${expoItem.location.country}`,
+        attendees: 0, // This would need to come from backend analytics
+        image: imageUrl, // Use actual imageUrl or fallback placeholder
+        imageUrl: imageUrl, // Keep imageUrl for consistency
+        expoId: expoItem.expoId,
+        dateRange: expoItem.dateRange,
+      };
+    });
   }, [expos]);
 
   // Calculate daily sync percentage (placeholder - could be based on completed vs total sessions)
