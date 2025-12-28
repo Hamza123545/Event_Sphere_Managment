@@ -199,6 +199,7 @@ export default function AttendeeDashboard() {
       location: `${expoItem.location.city}, ${expoItem.location.country}`,
       attendees: 0, // This would need to come from backend analytics
       image: expoItem.imageUrl || 'https://images.unsplash.com/photo-1540575861501-7ce0e220abb4?auto=format&fit=crop&w=800&q=80', // Use actual imageUrl or fallback placeholder
+      imageUrl: expoItem.imageUrl, // Keep imageUrl for consistency
       expoId: expoItem.expoId,
       dateRange: expoItem.dateRange,
     }));

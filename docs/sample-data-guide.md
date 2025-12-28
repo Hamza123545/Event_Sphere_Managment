@@ -109,7 +109,7 @@
   "preferences": {
     "interests": [
       "Artificial Intelligence",
-      "Cloud Computing",
+      " ",
       "Software Development",
       "Data Analytics",
       "Cybersecurity"

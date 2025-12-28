@@ -133,7 +133,7 @@ export async function browseExpos(options?: {
     const totalItems = await ExpoEvent.countDocuments(query);
 
     const expos = await ExpoEvent.find(query)
-      .select('title description theme dateRange location status')
+      .select('title description theme dateRange location status imageUrl')
       .sort({ 'dateRange.startDate': 1 })
       .skip(skip)
       .limit(limit);
@@ -151,6 +151,37 @@ export async function browseExpos(options?: {
 
     const totalPages = Math.ceil(totalItems / limit);
 
+    // Helper function to fix image URLs (same as in expoService)
+    const fixImageUrl = (url: string | undefined): string | undefined => {
+      if (!url) return undefined;
+      
+      // Replace localhost URLs with production URL
+      if (url.includes('localhost:5000') || url.includes('localhost:7860')) {
+        const productionUrl = process.env.BASE_URL || 
+          (process.env.NODE_ENV === 'production' 
+            ? 'https://hamza057-eventsphere-backend.hf.space'
+            : 'http://localhost:5000');
+        
+        // Extract the path from the old URL
+        try {
+          const urlObj = new URL(url);
+          const path = urlObj.pathname;
+          
+          // Construct new URL with production base
+          const fixedUrl = `${productionUrl}${path}`;
+          logger.debug('Fixed image URL in browseExpos', { original: url, fixed: fixedUrl });
+          return fixedUrl;
+        } catch (error) {
+          // If URL parsing fails, try simple string replacement
+          const fixedUrl = url.replace(/http:\/\/localhost:\d+/, productionUrl);
+          logger.debug('Fixed image URL in browseExpos (fallback)', { original: url, fixed: fixedUrl });
+          return fixedUrl;
+        }
+      }
+      
+      return url;
+    };
+    
     return {
       expos: expos.map((expo: any) => ({
         expoId: expo._id.toString(),
@@ -167,6 +198,7 @@ export async function browseExpos(options?: {
           country: expo.location.country,
         },
         status: expo.status as 'upcoming' | 'active',
+        imageUrl: fixImageUrl(expo.imageUrl),
       })),
       pagination: {
         currentPage: page,
