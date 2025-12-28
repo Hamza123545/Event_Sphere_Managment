@@ -70,7 +70,7 @@ export async function setupSocketIO(httpServer: HTTPServer): Promise<SocketIOSer
   // Socket.io CORS configuration - match the same origins as regular CORS
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
-    : ['http://localhost:5173', 'http://localhost:3000', 'https://event-sphere-managment.vercel.app'];
+    : ['http://localhost:5173', 'http://localhost:3000', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app'];
 
   io = new SocketIOServer(httpServer, {
     cors: {

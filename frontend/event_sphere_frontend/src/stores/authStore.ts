@@ -38,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: (user, token) => {
+        // Store token in both localStorage and Zustand for redundancy
         localStorage.setItem('auth_token', token);
         set({
           user,
@@ -48,6 +49,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('auth_token');
+        // Clear Zustand persist storage
+        localStorage.removeItem('auth-storage');
         set({
           user: null,
           token: null,
@@ -68,6 +71,24 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      // Sync with localStorage on hydration
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Ensure token is synced from localStorage if it exists
+          const storedToken = localStorage.getItem('auth_token');
+          if (storedToken && storedToken !== state.token) {
+            state.token = storedToken;
+            // If we have a token but no user, we're not fully authenticated
+            if (!state.user) {
+              state.isAuthenticated = false;
+            }
+          }
+          // If we have user and token, ensure isAuthenticated is true
+          if (state.user && state.token) {
+            state.isAuthenticated = true;
+          }
+        }
+      },
     }
   )
 );

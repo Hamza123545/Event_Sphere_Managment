@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
 import { useAuthStore, UserRole } from '../../stores/authStore';
 import { connectSocket, getSocket } from '../../services/socket';
 
@@ -21,6 +21,16 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, user, token } = useAuthStore();
   const location = useLocation();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Wait for Zustand persist to hydrate
+  useEffect(() => {
+    // Small delay to ensure store is hydrated
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Initialize socket connection when user is authenticated
   useEffect(() => {
@@ -33,8 +43,16 @@ export function ProtectedRoute({
     }
   }, [isAuthenticated, user, token]);
 
-  // Check authentication
-  if (!isAuthenticated || !user) {
+  // Wait for hydration before checking auth
+  if (!isHydrated) {
+    return null; // or a loading spinner
+  }
+
+  // Check authentication - also verify token exists in localStorage
+  const storedToken = localStorage.getItem('auth_token');
+  const hasValidAuth = isAuthenticated && user && (token || storedToken);
+  
+  if (!hasValidAuth) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 

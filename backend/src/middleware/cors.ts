@@ -10,7 +10,7 @@ import { logger } from '../utils/logger';
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
-  : ['http://localhost:5173', 'https://event-sphere-managment.vercel.app'];
+  : ['http://localhost:5173', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app'];
 
 /**
  * CORS configuration with origin whitelist

@@ -29,7 +29,7 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
         scriptSrcAttr: ["'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'http://localhost:7860', 'ws://localhost:5000', 'ws://localhost:7860', 'https://unpkg.com', 'https://event-sphere-managment.vercel.app'],
+        connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'http://localhost:7860', 'ws://localhost:5000', 'ws://localhost:7860', 'https://unpkg.com', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app'],
         fontSrc: ["'self'", 'https://unpkg.com'],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],

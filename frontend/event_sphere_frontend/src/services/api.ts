@@ -45,19 +45,6 @@ apiClient.interceptors.response.use(
   (error: AxiosError) => {
     // Handle 401 Unauthorized - clear token and redirect to login
     if (error.response?.status === 401) {
-      // Clear auth data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-      
-      // Clear auth store state (non-blocking)
-      import('../stores/authStore').then(({ useAuthStore }) => {
-        useAuthStore.getState().logout();
-      }).catch(() => {
-        // Store might not be available, that's okay
-      });
-      
-      // Only redirect if not already on login/register page
-      // Use a simple check to avoid redirect loops and conflicts with React Router
       const currentPath = window.location.pathname;
       const isAuthPage = currentPath === '/login' || 
                          currentPath === '/register' || 
@@ -66,10 +53,32 @@ apiClient.interceptors.response.use(
                          currentPath === '/forgot-password' ||
                          currentPath.startsWith('/reset-password');
       
+      // Don't clear auth on login/register pages (these are expected 401s)
       if (!isAuthPage) {
-        // Use window.location.href for reliable redirect
-        // This works correctly with React Router on Vercel
-        window.location.href = '/login';
+        // Check if this is a token validation error (not a missing token)
+        const errorMessage = (error.response?.data as any)?.message || '';
+        const isTokenError = errorMessage.includes('token') || 
+                            errorMessage.includes('authentication') ||
+                            errorMessage.includes('expired') ||
+                            errorMessage.includes('invalid');
+        
+        // Only logout if it's a token validation error (not just missing token)
+        if (isTokenError || error.config?.headers?.Authorization) {
+          // Clear auth data
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          
+          // Clear auth store state (non-blocking)
+          import('../stores/authStore').then(({ useAuthStore }) => {
+            useAuthStore.getState().logout();
+          }).catch(() => {
+            // Store might not be available, that's okay
+          });
+          
+          // Use window.location.href for reliable redirect
+          // This works correctly with React Router on Vercel
+          window.location.href = '/login';
+        }
       }
     }
 
