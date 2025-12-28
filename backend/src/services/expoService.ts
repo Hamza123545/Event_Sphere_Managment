@@ -247,11 +247,24 @@ export async function listOrganizerExpos(
       const cached = await cacheService.get<{ expos: ExpoSummary[]; pagination: any }>(cacheKey);
       if (cached) {
         // Fix image URLs in cached data as well
-        cached.expos = cached.expos.map(expo => ({
-          ...expo,
-          imageUrl: fixImageUrl(expo.imageUrl),
-        }));
-        logger.debug('Returning cached expo list (with fixed URLs)', { userId, cacheKey });
+        cached.expos = cached.expos.map(expo => {
+          const fixedUrl = fixImageUrl(expo.imageUrl);
+          logger.debug('Cached expo image URL', { 
+            expoId: expo.expoId, 
+            original: expo.imageUrl, 
+            fixed: fixedUrl 
+          });
+          return {
+            ...expo,
+            imageUrl: fixedUrl,
+          };
+        });
+        logger.debug('Returning cached expo list (with fixed URLs)', { 
+          userId, 
+          cacheKey,
+          expoCount: cached.expos.length,
+          exposWithImages: cached.expos.filter(e => e.imageUrl).length
+        });
         return cached;
       }
     }
@@ -271,25 +284,39 @@ export async function listOrganizerExpos(
       .skip(skip)
       .limit(limit);
 
-    const expoSummaries: ExpoSummary[] = expos.map((expo: IExpoEvent) => ({
-      expoId: (expo as any)._id.toString(),
-      title: expo.title,
-      status: expo.status,
-      dateRange: {
-        startDate: expo.dateRange.startDate,
-        endDate: expo.dateRange.endDate,
-      },
-      location: {
-        venueName: expo.location.venueName,
-        city: expo.location.city,
-        country: expo.location.country,
-      },
-      imageUrl: fixImageUrl(expo.imageUrl),
-    }));
+    const expoSummaries: ExpoSummary[] = expos.map((expo: IExpoEvent) => {
+      const fixedUrl = fixImageUrl(expo.imageUrl);
+      logger.debug('Expo image URL processing', { 
+        expoId: (expo as any)._id.toString(),
+        title: expo.title,
+        originalImageUrl: expo.imageUrl,
+        fixedImageUrl: fixedUrl
+      });
+      return {
+        expoId: (expo as any)._id.toString(),
+        title: expo.title,
+        status: expo.status,
+        dateRange: {
+          startDate: expo.dateRange.startDate,
+          endDate: expo.dateRange.endDate,
+        },
+        location: {
+          venueName: expo.location.venueName,
+          city: expo.location.city,
+          country: expo.location.country,
+        },
+        imageUrl: fixedUrl,
+      };
+    });
 
     const totalPages = Math.ceil(totalItems / limit);
 
-    logger.info('Listed expos for organizer', { organizerId: userId, count: expoSummaries.length });
+    logger.info('Listed expos for organizer', { 
+      organizerId: userId, 
+      count: expoSummaries.length,
+      exposWithImages: expoSummaries.filter(e => e.imageUrl).length,
+      imageUrls: expoSummaries.map(e => ({ expoId: e.expoId, imageUrl: e.imageUrl }))
+    });
 
     const result = {
       expos: expoSummaries,

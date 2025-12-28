@@ -12,6 +12,11 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
   : ['http://localhost:5173', 'https://eventsphere.edvo.app', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app'];
 
+// Normalize origin by removing trailing slash
+const normalizeOrigin = (origin: string): string => {
+  return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+};
+
 /**
  * CORS configuration with origin whitelist
  */
@@ -23,10 +28,18 @@ export const corsMiddleware = cors({
       return;
     }
 
-    if (allowedOrigins.includes(origin)) {
+    // Normalize the origin (remove trailing slash)
+    const normalizedOrigin = normalizeOrigin(origin);
+    const normalizedAllowed = allowedOrigins.map(normalizeOrigin);
+
+    if (normalizedAllowed.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
-      logger.warn('CORS: Origin not allowed', { origin });
+      logger.warn('CORS: Origin not allowed', { 
+        origin, 
+        normalizedOrigin,
+        allowedOrigins: normalizedAllowed 
+      });
       callback(new Error('Not allowed by CORS'));
     }
   },
