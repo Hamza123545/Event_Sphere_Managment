@@ -10,7 +10,26 @@ import { logger } from '../utils/logger';
 import { CustomError } from '../middleware/errorHandler';
 
 const UPLOADS_BASE_DIR = path.join(process.cwd(), 'uploads');
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
+// Get BASE_URL from environment, or construct from PORT and NODE_ENV
+// For Hugging Face Spaces, use the Space URL if BASE_URL is not set
+const getBaseUrl = (): string => {
+  // First check if BASE_URL is explicitly set
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+  
+  // For Hugging Face Spaces production, use the Space URL
+  if (process.env.NODE_ENV === 'production') {
+    // Hugging Face Spaces URL pattern
+    return 'https://hamza057-eventsphere-backend.hf.space';
+  }
+  
+  // Development default
+  const port = process.env.PORT || '5000';
+  return `http://localhost:${port}`;
+};
+
+const BASE_URL = getBaseUrl();
 const UPLOADS_PUBLIC_PATH = '/uploads';
 
 export interface UploadedFileInfo {

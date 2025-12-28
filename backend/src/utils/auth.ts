@@ -27,13 +27,34 @@ export interface TokenPayload {
  */
 export function generateToken(payload: TokenPayload): string {
   try {
+    // Log the expiration setting for debugging
+    logger.info('Generating JWT token', {
+      userId: payload.userId,
+      role: payload.role,
+      expiresIn: JWT_EXPIRES_IN,
+      expiresInType: typeof JWT_EXPIRES_IN,
+    });
+
     const token = jwt.sign(payload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
       issuer: 'eventsphere-api',
       audience: 'eventsphere-client',
     } as jwt.SignOptions);
 
-    logger.debug('Token generated', { userId: payload.userId, role: payload.role });
+    // Decode the token to verify expiration was set correctly
+    const decoded = jwt.decode(token) as any;
+    if (decoded && decoded.exp) {
+      const expirationDate = new Date(decoded.exp * 1000);
+      const now = new Date();
+      const timeUntilExpiry = expirationDate.getTime() - now.getTime();
+      logger.info('Token generated successfully', {
+        userId: payload.userId,
+        expiresAt: expirationDate.toISOString(),
+        expiresInMs: timeUntilExpiry,
+        expiresInMinutes: Math.round(timeUntilExpiry / 60000),
+      });
+    }
+
     return token;
   } catch (error) {
     logger.error('Error generating token:', error);
@@ -52,18 +73,31 @@ export function verifyToken(token: string): TokenPayload {
     // Trim token to remove any whitespace
     const trimmedToken = token.trim();
     
-    // Log token preview for debugging (first 20 chars only)
-    logger.debug('Verifying token', { 
-      tokenPreview: trimmedToken.substring(0, 20) + '...',
-      tokenLength: trimmedToken.length 
-    });
+    // First decode without verification to check expiration
+    const unverified = jwt.decode(trimmedToken) as any;
+    if (unverified) {
+      const now = Math.floor(Date.now() / 1000);
+      const exp = unverified.exp;
+      if (exp) {
+        const expirationDate = new Date(exp * 1000);
+        const timeUntilExpiry = (exp - now) * 1000;
+        logger.debug('Token expiration check', {
+          tokenPreview: trimmedToken.substring(0, 20) + '...',
+          expiresAt: expirationDate.toISOString(),
+          expiresInMs: timeUntilExpiry,
+          expiresInSeconds: exp - now,
+          currentTime: new Date().toISOString(),
+          isExpired: exp < now,
+        });
+      }
+    }
     
     const decoded = jwt.verify(trimmedToken, JWT_SECRET, {
       issuer: 'eventsphere-api',
       audience: 'eventsphere-client',
-    });
+    }) as TokenPayload;
 
-    return decoded as TokenPayload;
+    return decoded;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       logger.warn('Invalid JWT token:', {

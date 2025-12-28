@@ -18,6 +18,10 @@ import apiDocsRoutes from './routes/apiDocsRoutes';
 
 const app: Application = express();
 
+// Trust proxy for rate limiting and IP detection (required for Hugging Face Spaces)
+// This allows Express to correctly identify client IPs behind a proxy
+app.set('trust proxy', true);
+
 // Security middleware (must be first)
 // Helmet sets various HTTP headers to help protect the app (T234)
 app.use(
@@ -29,7 +33,7 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
         scriptSrcAttr: ["'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'http://localhost:7860', 'ws://localhost:5000', 'ws://localhost:7860', 'https://unpkg.com', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app'],
+        connectSrc: ["'self'", 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'http://localhost:7860', 'ws://localhost:5000', 'ws://localhost:7860', 'https://unpkg.com', 'https://event-sphere-managment.vercel.app', 'https://event-sphere-managment-vqvw.vercel.app', 'https://hamza057-eventsphere-backend.hf.space'],
         fontSrc: ["'self'", 'https://unpkg.com'],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
