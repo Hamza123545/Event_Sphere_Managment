@@ -57,7 +57,12 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<UserPro
  * Request password reset
  */
 export async function forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
-  const response = await api.post<{ success: boolean; message: string }>('/auth/forgot-password', { email });
+  // Use longer timeout for password reset since email sending can take time
+  const response = await api.post<{ success: boolean; message: string }>(
+    '/auth/forgot-password',
+    { email },
+    { timeout: 30000 } // 30 seconds timeout for email operations
+  );
   return response.data;
 }
 

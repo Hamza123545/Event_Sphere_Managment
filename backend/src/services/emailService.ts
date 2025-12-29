@@ -34,7 +34,8 @@ function getEmailTransporter() {
     return null;
   }
 
-  // Create transporter
+  // Create transporter with timeout configuration
+  // Set longer timeouts for email operations to prevent premature failures
   const transporter = nodemailer.createTransport({
     host: emailHost,
     port: emailPort,
@@ -43,6 +44,14 @@ function getEmailTransporter() {
       user: emailUser,
       pass: emailPassword,
     },
+    // Connection timeout settings
+    connectionTimeout: 10000, // 10 seconds to establish connection
+    greetingTimeout: 5000, // 5 seconds for SMTP greeting
+    socketTimeout: 20000, // 20 seconds for socket operations
+    // Pool configuration for connection reuse
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
   });
 
   return { transporter, from: emailFrom, fromName: emailFromName };

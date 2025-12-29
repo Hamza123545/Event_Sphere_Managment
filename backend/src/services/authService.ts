@@ -376,25 +376,29 @@ export async function forgotPassword(email: string): Promise<void> {
       timestamp: new Date().toISOString(),
     });
 
-    // Send password reset email
-    try {
-      const userName = user.profile?.firstName
-        ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
-        : user.email;
-      await sendPasswordResetEmail(user.email, userName, resetToken);
-      logger.info('Password reset email sent', {
-        userId: user._id.toString(),
-        email: user.email,
+    // Send password reset email (non-blocking)
+    // Don't await to prevent request timeout - email will be sent in background
+    const userName = user.profile?.firstName
+      ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
+      : user.email;
+    
+    // Send email asynchronously without blocking the response
+    sendPasswordResetEmail(user.email, userName, resetToken)
+      .then(() => {
+        logger.info('Password reset email sent', {
+          userId: user._id.toString(),
+          email: user.email,
+        });
+      })
+      .catch((emailError) => {
+        logger.error('Failed to send password reset email', {
+          userId: user._id.toString(),
+          email: user.email,
+          error: emailError,
+        });
+        // Don't fail the password reset request if email fails
+        // The token is still generated and can be used
       });
-    } catch (emailError) {
-      logger.error('Failed to send password reset email', {
-        userId: user._id.toString(),
-        email: user.email,
-        error: emailError,
-      });
-      // Don't fail the password reset request if email fails
-      // The token is still generated and can be used
-    }
   } catch (error) {
     logger.error('Error in forgotPassword service:', error);
     // Don't reveal error details for security
