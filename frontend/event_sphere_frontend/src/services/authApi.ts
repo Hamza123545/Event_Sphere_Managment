@@ -56,15 +56,17 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<UserPro
 /**
  * Request password reset
  */
-export async function forgotPassword(email: string): Promise<void> {
-  await api.post('/auth/forgot-password', { email });
+export async function forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+  const response = await api.post<{ success: boolean; message: string }>('/auth/forgot-password', { email });
+  return response.data;
 }
 
 /**
  * Reset password with token
  */
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
-  await api.post('/auth/reset-password', { token, newPassword });
+export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  const response = await api.post<{ success: boolean; message: string }>('/auth/reset-password', { token, newPassword });
+  return response.data;
 }
 
 /**

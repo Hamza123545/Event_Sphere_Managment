@@ -3,7 +3,7 @@
  * Allows users to request a password reset email
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   TextField,
@@ -31,6 +31,7 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const isSubmittingRef = useRef(false);
 
   const validateEmail = (): boolean => {
     if (!email.trim()) {
@@ -46,6 +47,12 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isSubmittingRef.current || isLoading) {
+      return;
+    }
+
     setError(null);
     setSuccess(false);
 
@@ -53,15 +60,30 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsLoading(true);
+    
     try {
-      await forgotPassword(email);
-      setSuccess(true);
+      const response = await forgotPassword(email);
+      if (response.success) {
+        setSuccess(true);
+      } else {
+        setError(response.message || 'Failed to send reset email. Please try again.');
+      }
     } catch (err: unknown) {
+      // Check if error is due to request cancellation
+      if (err && typeof err === 'object' && 'message' in err) {
+        const axiosError = err as { code?: string; message?: string };
+        if (axiosError.code === 'ERR_CANCELED' || axiosError.message?.includes('canceled')) {
+          // Request was canceled, don't show error
+          return;
+        }
+      }
       const errorMessage = parseApiError(err);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
