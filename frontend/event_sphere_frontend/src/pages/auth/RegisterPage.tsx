@@ -223,36 +223,52 @@ export default function RegisterPage() {
           justifyContent: 'center',
           position: 'relative',
           zIndex: 1,
+          py: { xs: 4, sm: 6, md: 8 },
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 600, px: 3 }}>
+        <Box sx={{ width: '100%', maxWidth: { xs: '100%', sm: 600, md: 700 }, px: { xs: 2, sm: 3, md: 4 } }}>
           <MotionBox
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <GlassCard sx={{ p: 5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+            <GlassCard sx={{ p: { xs: 3, sm: 4, md: 5 }, borderRadius: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: { xs: 2, sm: 3 } }}>
                 <Box
                   sx={{
-                    width: 48,
-                    height: 48,
+                    width: { xs: 40, sm: 48 },
+                    height: { xs: 40, sm: 48 },
                     bgcolor: activeTheme.accent,
-                    borderRadius: '12px',
+                    borderRadius: { xs: '10px', sm: '12px' },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    mr: 2,
+                    mr: { xs: 1.5, sm: 2 },
                   }}
                 >
-                  <AutoAwesome sx={{ color: '#fff', fontSize: '1.5rem' }} />
+                  <AutoAwesome sx={{ color: '#fff', fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
                 </Box>
-                <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-1px' }}>
+                <Typography 
+                  variant="h4" 
+                  sx={{ 
+                    fontWeight: 900, 
+                    letterSpacing: '-1px',
+                    fontSize: { xs: '1.5rem', sm: '2rem' }
+                  }}
+                >
                   EventSphere
                 </Typography>
               </Box>
 
-              <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, textAlign: 'center' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  mb: { xs: 3, sm: 4 }, 
+                  textAlign: 'center',
+                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+                }}
+              >
                 Create Account
               </Typography>
 
@@ -273,11 +289,19 @@ export default function RegisterPage() {
               )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
               {/* Role Selection */}
               <Grid item xs={12}>
                 <FormControl fullWidth required>
-                  <InputLabel id="role-label" sx={{ color: activeTheme.textSecondary }}>Account Type</InputLabel>
+                  <InputLabel 
+                    id="role-label" 
+                    sx={{ 
+                      color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' }
+                    }}
+                  >
+                    Account Type
+                  </InputLabel>
                   <Select
                     labelId="role-label"
                     id="role"
@@ -292,11 +316,17 @@ export default function RegisterPage() {
                     sx={{
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover .MuiOutlinedInput-notchedOutline': {
                         borderColor: activeTheme.accent,
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
                       },
                     }}
                   >
@@ -325,15 +355,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -358,15 +398,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -390,15 +440,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -422,15 +482,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -454,15 +524,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -485,15 +565,25 @@ export default function RegisterPage() {
                     '& .MuiOutlinedInput-root': {
                       bgcolor: activeTheme.surface,
                       color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       '& fieldset': {
                         borderColor: activeTheme.border,
+                        borderWidth: '1.5px',
                       },
                       '&:hover fieldset': {
                         borderColor: activeTheme.accent,
                       },
+                      '&.Mui-focused fieldset': {
+                        borderColor: activeTheme.accent,
+                        borderWidth: '2px',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       color: activeTheme.textSecondary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     },
                   }}
                 />
@@ -501,8 +591,27 @@ export default function RegisterPage() {
 
               {/* GDPR Consent */}
               <Grid item xs={12}>
-                <Box sx={{ border: `1px solid ${activeTheme.border}`, borderRadius: 2, p: 3, bgcolor: activeTheme.surface }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: activeTheme.textPrimary }}>
+                <Box 
+                  sx={{ 
+                    border: `1.5px solid ${activeTheme.border}`, 
+                    borderRadius: { xs: 2, sm: 2.5 }, 
+                    p: { xs: 2, sm: 3 }, 
+                    bgcolor: activeTheme.surface,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      borderColor: activeTheme.accent + '40',
+                    }
+                  }}
+                >
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      mb: { xs: 1.5, sm: 2 }, 
+                      color: activeTheme.textPrimary,
+                      fontSize: { xs: '0.875rem', sm: '1rem' }
+                    }}
+                  >
                     Privacy & Consent
                   </Typography>
                   <FormControlLabel
@@ -521,13 +630,28 @@ export default function RegisterPage() {
                       />
                     }
                     label={
-                      <Typography variant="body2" sx={{ color: activeTheme.textPrimary }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: activeTheme.textPrimary,
+                          fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+                        }}
+                      >
                         I consent to the processing of my personal data (Required)
                       </Typography>
                     }
                   />
                   {errors.dataProcessingConsent && (
-                    <Typography variant="caption" sx={{ color: activeTheme.error, ml: 4, display: 'block', mt: 0.5 }}>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: activeTheme.error, 
+                        ml: { xs: 4.5, sm: 5 }, 
+                        display: 'block', 
+                        mt: 0.5,
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                      }}
+                    >
                       {errors.dataProcessingConsent}
                     </Typography>
                   )}
@@ -546,7 +670,13 @@ export default function RegisterPage() {
                       />
                     }
                     label={
-                      <Typography variant="body2" sx={{ color: activeTheme.textPrimary }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: activeTheme.textPrimary,
+                          fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+                        }}
+                      >
                         I consent to receiving marketing communications (Optional)
                       </Typography>
                     }
@@ -559,12 +689,18 @@ export default function RegisterPage() {
               type="submit"
               primary
               fullWidth
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              sx={{ 
+                mt: { xs: 2.5, sm: 3 }, 
+                mb: { xs: 1.5, sm: 2 }, 
+                py: { xs: 1.25, sm: 1.5 },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                fontWeight: 600,
+              }}
               disabled={isLoading}
             >
               {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Create Account'}
             </ActionButton>
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Box sx={{ textAlign: 'center', mt: { xs: 1.5, sm: 2 } }}>
               <Link
                 component="button"
                 type="button"
@@ -574,6 +710,7 @@ export default function RegisterPage() {
                   cursor: 'pointer',
                   color: activeTheme.accent,
                   textDecoration: 'none',
+                  fontSize: { xs: '0.8125rem', sm: '0.875rem' },
                   '&:hover': {
                     textDecoration: 'underline',
                   },
